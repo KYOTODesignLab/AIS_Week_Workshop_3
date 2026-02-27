@@ -1,0 +1,7 @@
+train: C:/Users/akango/Documents/github/sumizuke/dataset/images/train
+val: C:/Users/akango/Documents/github/sumizuke/dataset/images/val
+
+nc: 6  # Number of classes
+names: [target, angle, negative, end, diameter, depth]  # class names
+
+

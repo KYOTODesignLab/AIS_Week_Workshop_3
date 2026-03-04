@@ -37,7 +37,7 @@ git clone https://github.com/grgle/AIS_Week_Workshop_3.git
 
 3. In VS Code, set the default terminal profile to command prompt, by clicking on the down arrow next to the + symbol at the top right corner of the terminal window, click "Select Default Profile", and then click "Command Prompt" from the menu in the top middle.
 
-Open your repository folder, and create the necessary virtual environment with conda:
+Open your repository folder (`GitHub/AIS_Week_Workshop_3'), and create the necessary virtual environment with conda:
 
 ```
 conda env create -f environment.yml
@@ -52,5 +52,5 @@ conda env update -f environment.yml
 Then activate the environmet:
 
 ```
-conda activate eps_25
+conda activate AIS26
 ```

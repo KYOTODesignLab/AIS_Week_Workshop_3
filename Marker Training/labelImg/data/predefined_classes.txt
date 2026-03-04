@@ -1,12 +1,3 @@
-soso
+smiley
+sad
 good
-bad
-start
-target
-30
-45
-60
-unit
-target
-angle
-depth

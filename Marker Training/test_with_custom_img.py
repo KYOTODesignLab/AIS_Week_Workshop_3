@@ -10,7 +10,7 @@ path = "../models/sumizuke_yolov8n_2.pt"
 model = YOLO(path)
 
 # Test on custom images randomly selected from folder
-folder = "C:/Users/akango/Downloads/_data/combined"
+folder = "C:/Users/sabis/OneDrive/Documents/GitHub/AIS_Week_Workshop_3/Marker Training/images_to_label/raw"
 
 
 

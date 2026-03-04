@@ -5,7 +5,7 @@ import os
 import cv2
 
 def resize_images(folder):
-    for root, dirs, files in os.walk(folder):
+    for root, dirs, files in os.walk(os.path.join(folder, "raw")):
         print('Processing', root)
         for file in files:
             print('Processing', file)   
@@ -18,12 +18,13 @@ def resize_images(folder):
                 else:
                     img = img[:, (w-h)//2:(w+h)//2]
                 # Resize to 256x256
-                img = cv2.resize(img, (320, 320))
+                img = cv2.resize(img, (640, 640))
                 # save to the same folder as a copy
-                cv2.imwrite(os.path.join(root, 'resized_' + file), img)
+                cv2.imwrite(os.path.join(folder, "resized",'resized_' + file), img)
                 print('Resized', file)
 
 if __name__ == '__main__':
-    folder = 'C:/Users/akango/Downloads/drive-download-20250326T013909Z-001'
+    folder = os.path.join(os.path.dirname(__file__), "images_to_label")
+    print('Resizing images in the folder:', folder)
     resize_images(folder)
     print('All images in the folder have been resized to 320x320')

@@ -3,10 +3,10 @@ import shutil
 import random
 
 # Paths to your dataset folder
-dataset_path = "C:/Users/akango/Downloads/_data/combined"  # Change this to your actual dataset path
+dataset_path = os.path.join(os.path.dirname(__file__), "images_to_label/resized")  # Change this to your actual dataset path
 
 # Parent folder /dataset for output
-output_path = os.path.join(os.path.dirname(__file__), "..", "dataset")
+output_path = os.path.join(os.path.dirname(__file__), "labelimg/dataset")
 
 # Train/val split ratio
 train_ratio = 0.8  # 80% training, 20% validation

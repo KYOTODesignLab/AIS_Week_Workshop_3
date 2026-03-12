@@ -1,0 +1,13 @@
+train: labelImg/dataset/images/train
+val: labelImg/dataset/images/val
+
+
+# Directories
+train_label_dir: labelImg/dataset/labels/train
+val_label_dir: labelImg/dataset/labels/val
+
+
+nc: 5  # Number of classes
+names: [smile, o, x, tri, heart]  # class names: o=origin, x=x-axis marker
+
+

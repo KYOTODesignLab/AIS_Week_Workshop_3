@@ -6,7 +6,6 @@
 
 1. Install the following on your system:
 
-* Rhino 8: https://www.rhino3d.com/download
 * VS Code: https://code.visualstudio.com/
 * GIT : https://git-scm.com/
 

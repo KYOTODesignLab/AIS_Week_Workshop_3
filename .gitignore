@@ -75,7 +75,7 @@ weights/
 
 # ── Dataset / label images ────────────────────────────────────────────────────
 # Exclude all files inside marker_images subfolders – keep directory structure via .gitkeep
-00_Marker_Training/labelImg/marker_images/raw/*
+!00_Marker_Training/labelImg/marker_images/test/*
 00_Marker_Training/labelImg/marker_images/resized/*
 00_Marker_Training/labelImg/marker_images/_archived/**
 !00_Marker_Training/labelImg/marker_images/raw/.gitkeep

@@ -6,17 +6,17 @@ import os, random
 random.seed(50)
 
 # Relative path to YOLOv5 model
-path = os.path.join(os.path.dirname(__file__), "models", "sumizuke_yolov8n_3.pt")
+path = os.path.join(os.path.dirname(__file__), "models", "AIS26ws3_yolov8n_3.pt")
 model = YOLO(path)
 
 # Test on custom images randomly selected from folder
-folder = os.path.join(os.path.dirname(__file__), "images_to_label", "raw")
+folder = os.path.join(os.path.dirname(__file__), "LabelImg", "marker_images", "raw")
 
 
 
 # Get 5 random images
 images = [f for f in os.listdir(folder) if f.endswith(".jpg") or f.endswith(".jpeg") or f.endswith(".JPG")]
-images = random.sample(images, 5)
+images = random.sample(images, 3)
 
 # Process each image
 for img in images:

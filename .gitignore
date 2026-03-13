@@ -69,9 +69,9 @@ weights/
 *.engine
 *.torchscript
 *.tflite
-!00_Marker_Training\yolov8n.pt
-!00_Marker_Training\models\AIS26ws3_yolov8n_3.pt
 *.pt
+!00_Marker_Training/yolov8n.pt
+!00_Marker_Training/models/AIS26ws3_yolov8n_3.pt
 
 # ── Dataset / label images ────────────────────────────────────────────────────
 # Exclude all files inside marker_images subfolders – keep directory structure via .gitkeep

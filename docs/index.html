@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Photo Capture</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
 
@@ -18,28 +19,46 @@
   <canvas id="canvas"></canvas>
 
   <div class="controls">
+    <div id="mqtt-status">MQTT: connecting…</div>
+    <input id="server-url" type="url" placeholder="Flask server URL (Instagram API posting only)" />
     <div class="row">
       <button id="capture-btn">📷 Capture</button>
       <button id="retake-btn">↩ Retake</button>
     </div>
     <textarea id="message" placeholder="Enter your message…"></textarea>
-    <button id="save-btn" disabled>💾 Save</button>
+    <button id="save-btn" disabled>⬆️ Send &amp; Analyse</button>
+    <button id="share-btn" disabled>📤 Share to Instagram</button>
+    <button id="ig-post-btn" disabled>📸 Post to Instagram</button>
     <div id="status"></div>
   </div>
 
-  <script>
-    const preview    = document.getElementById('preview');
-    const snapshot   = document.getElementById('snapshot');
-    const canvas     = document.getElementById('canvas');
-    const captureBtn = document.getElementById('capture-btn');
-    const retakeBtn  = document.getElementById('retake-btn');
-    const saveBtn    = document.getElementById('save-btn');
-    const messageEl  = document.getElementById('message');
-    const statusEl   = document.getElementById('status');
+  <div id="results" hidden>
+    <h2>Detections</h2>
+    <ul id="detections-list"></ul>
+  </div>
 
+  <script>
+    const preview       = document.getElementById('preview');
+    const snapshot      = document.getElementById('snapshot');
+    const canvas        = document.getElementById('canvas');
+    const captureBtn    = document.getElementById('capture-btn');
+    const retakeBtn     = document.getElementById('retake-btn');
+    const saveBtn       = document.getElementById('save-btn');
+    const messageEl     = document.getElementById('message');
+    const statusEl      = document.getElementById('status');
+    const serverUrlEl   = document.getElementById('server-url');
+    const resultsEl     = document.getElementById('results');
+    const detectionsEl  = document.getElementById('detections-list');
+    const shareBtn      = document.getElementById('share-btn');
+    const igPostBtn     = document.getElementById('ig-post-btn');
+    const mqttStatusEl  = document.getElementById('mqtt-status');
+
+    const sessionId  = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    let mqttClient   = null;
+    let mqttReady    = false;
     let stream       = null;
     let capturedBlob = null;
-    let cacheDir     = null; // remembered across saves in this session
+    let lastTimestamp = null;
 
     // ── Camera ────────────────────────────────────────────────────────────────
 
@@ -79,7 +98,8 @@
         preview.style.display  = 'none';
         captureBtn.style.display = 'none';
         retakeBtn.style.display  = '';
-        saveBtn.disabled = false;
+        saveBtn.disabled  = false;
+        shareBtn.disabled = false;
         setStatus(`Captured at ${w} × ${h} px.`);
       }, 'image/jpeg', 0.95);
     });
@@ -94,60 +114,104 @@
       preview.style.display  = 'block';
       captureBtn.style.display = '';
       retakeBtn.style.display  = 'none';
-      saveBtn.disabled = true;
+      saveBtn.disabled   = true;
+      shareBtn.disabled  = true;
+      igPostBtn.disabled = true;
+      lastTimestamp      = null;
       setStatus('');
     });
 
-    // ── Save ──────────────────────────────────────────────────────────────────
+    // ── Send & Analyse ────────────────────────────────────────────────────────
 
     saveBtn.addEventListener('click', async () => {
       if (!capturedBlob) return;
 
-      const ts       = Date.now();                           // UNIX timestamp (ms)
-      const imgName  = `${ts}.jpg`;
-      const jsonName = `${ts}.json`;
-      const jsonBlob = new Blob(
-        [JSON.stringify({ timestamp: ts, message: messageEl.value }, null, 2)],
-        { type: 'application/json' }
-      );
+      const serverUrl = serverUrlEl.value.trim().replace(/\/$/, '');
+      if (!serverUrl) {
+        setStatus('Please enter the server URL first.', 'error');
+        return;
+      }
 
-      if (typeof window.showDirectoryPicker === 'function') {
-        // File System Access API — saves into a "cache" subfolder
-        try {
-          if (!cacheDir) {
-            const root = await window.showDirectoryPicker({ mode: 'readwrite' });
-            cacheDir   = await root.getDirectoryHandle('cache', { create: true });
-          }
-          await writeFile(cacheDir, imgName,  capturedBlob);
-          await writeFile(cacheDir, jsonName, jsonBlob);
-          setStatus(`Saved to cache/${imgName} and cache/${jsonName}.`, 'ok');
-        } catch (err) {
-          if (err.name !== 'AbortError') setStatus(`Save error: ${err.message}`, 'error');
-        }
+      setStatus('Uploading…');
+      saveBtn.disabled = true;
+
+      const form = new FormData();
+      form.append('image',   capturedBlob, 'capture.jpg');
+      form.append('message', messageEl.value);
+
+      try {
+        const res  = await fetch(`${serverUrl}/upload`, { method: 'POST', body: form });
+        if (!res.ok) throw new Error(`Server responded ${res.status}`);
+        const data = await res.json();
+
+        setStatus(`Done — ${data.detections.length} detection(s).`, 'ok');
+        lastTimestamp = data.timestamp;
+        igPostBtn.disabled = false;
+        showDetections(data.detections);
+      } catch (err) {
+        setStatus(`Upload error: ${err.message}`, 'error');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+
+    function showDetections(detections) {
+      detectionsEl.innerHTML = '';
+      if (detections.length === 0) {
+        detectionsEl.innerHTML = '<li>No detections.</li>';
       } else {
-        // Fallback: trigger browser downloads
-        triggerDownload(capturedBlob, imgName);
-        triggerDownload(jsonBlob, jsonName);
-        setStatus(`Downloaded ${imgName} and ${jsonName}.`, 'ok');
+        detections.forEach(d => {
+          const li = document.createElement('li');
+          li.textContent = `${d.label}  (${(d.confidence * 100).toFixed(1)}%)  `
+            + `[${d.box.x1}, ${d.box.y1}, ${d.box.x2}, ${d.box.y2}]`;
+          detectionsEl.appendChild(li);
+        });
+      }
+      resultsEl.hidden = false;
+    }
+
+    // ── Post to Instagram (via server) ────────────────────────────────────────
+
+    igPostBtn.addEventListener('click', async () => {
+      const serverUrl = serverUrlEl.value.trim().replace(/\/$/, '');
+      if (!serverUrl || !lastTimestamp) return;
+      setStatus('Posting to Instagram…');
+      igPostBtn.disabled = true;
+      try {
+        const res  = await fetch(`${serverUrl}/post-instagram/${lastTimestamp}`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `Server ${res.status}`);
+        setStatus(`Posted! Instagram post id: ${data.post_id}`, 'ok');
+      } catch (err) {
+        setStatus(`Instagram error: ${err.message}`, 'error');
+        igPostBtn.disabled = false;
+      }
+    });
+
+    // ── Share to Instagram ────────────────────────────────────────────────────
+
+    shareBtn.addEventListener('click', async () => {
+      if (!capturedBlob) return;
+      if (!navigator.canShare) {
+        setStatus('Web Share not supported on this browser/device.', 'error');
+        return;
+      }
+      const file = new File([capturedBlob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      if (!navigator.canShare({ files: [file] })) {
+        setStatus('This browser cannot share files.', 'error');
+        return;
+      }
+      try {
+        await navigator.share({
+          files: [file],
+          title: messageEl.value || 'Photo Capture'
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') setStatus(`Share error: ${err.message}`, 'error');
       }
     });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    async function writeFile(dirHandle, filename, blob) {
-      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
-      const writable   = await fileHandle.createWritable();
-      await writable.write(blob);
-      await writable.close();
-    }
-
-    function triggerDownload(blob, filename) {
-      const a  = document.createElement('a');
-      a.href   = URL.createObjectURL(blob);
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    }
 
     function setStatus(msg, type = '') {
       statusEl.textContent = msg;
@@ -156,7 +220,6 @@
 
     // ── Init ──────────────────────────────────────────────────────────────────
 
-    startCamera();
-  </script>
+    startCamera();    connectMQTT();  </script>
 </body>
 </html>

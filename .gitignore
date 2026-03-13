@@ -1,3 +1,7 @@
+# ── Website cache (user-captured photos & messages) ──────────────────────────
+Publish/cache/*
+!Publish/cache/.gitkeep
+
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]

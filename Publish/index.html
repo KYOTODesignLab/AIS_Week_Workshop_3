@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Capture</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>Photo Capture</h1>
+
+  <div id="viewport">
+    <video id="preview" autoplay playsinline muted></video>
+    <img  id="snapshot" alt="Captured photo" />
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="controls">
+    <div class="row">
+      <button id="capture-btn">📷 Capture</button>
+      <button id="retake-btn">↩ Retake</button>
+    </div>
+    <textarea id="message" placeholder="Enter your message…"></textarea>
+    <button id="save-btn" disabled>💾 Save</button>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const preview    = document.getElementById('preview');
+    const snapshot   = document.getElementById('snapshot');
+    const canvas     = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture-btn');
+    const retakeBtn  = document.getElementById('retake-btn');
+    const saveBtn    = document.getElementById('save-btn');
+    const messageEl  = document.getElementById('message');
+    const statusEl   = document.getElementById('status');
+
+    let stream       = null;
+    let capturedBlob = null;
+    let cacheDir     = null; // remembered across saves in this session
+
+    // ── Camera ────────────────────────────────────────────────────────────────
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width:     { ideal: 4096 },
+            height:    { ideal: 2160 },
+            facingMode: { ideal: 'environment' }
+          },
+          audio: false
+        });
+        preview.srcObject = stream;
+        setStatus('Camera ready.');
+      } catch (err) {
+        setStatus(`Camera error: ${err.message}`, 'error');
+      }
+    }
+
+    // ── Capture ───────────────────────────────────────────────────────────────
+
+    captureBtn.addEventListener('click', () => {
+      const track    = stream?.getVideoTracks()[0];
+      const settings = track?.getSettings() ?? {};
+      const w = settings.width  || preview.videoWidth;
+      const h = settings.height || preview.videoHeight;
+
+      canvas.width  = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(preview, 0, 0, w, h);
+
+      canvas.toBlob(blob => {
+        capturedBlob = blob;
+        snapshot.src           = URL.createObjectURL(blob);
+        snapshot.style.display = 'block';
+        preview.style.display  = 'none';
+        captureBtn.style.display = 'none';
+        retakeBtn.style.display  = '';
+        saveBtn.disabled = false;
+        setStatus(`Captured at ${w} × ${h} px.`);
+      }, 'image/jpeg', 0.95);
+    });
+
+    // ── Retake ────────────────────────────────────────────────────────────────
+
+    retakeBtn.addEventListener('click', () => {
+      if (snapshot.src) URL.revokeObjectURL(snapshot.src);
+      capturedBlob = null;
+      snapshot.src           = '';
+      snapshot.style.display = 'none';
+      preview.style.display  = 'block';
+      captureBtn.style.display = '';
+      retakeBtn.style.display  = 'none';
+      saveBtn.disabled = true;
+      setStatus('');
+    });
+
+    // ── Save ──────────────────────────────────────────────────────────────────
+
+    saveBtn.addEventListener('click', async () => {
+      if (!capturedBlob) return;
+
+      const ts       = Date.now();                           // UNIX timestamp (ms)
+      const imgName  = `${ts}.jpg`;
+      const jsonName = `${ts}.json`;
+      const jsonBlob = new Blob(
+        [JSON.stringify({ timestamp: ts, message: messageEl.value }, null, 2)],
+        { type: 'application/json' }
+      );
+
+      if (typeof window.showDirectoryPicker === 'function') {
+        // File System Access API — saves into a "cache" subfolder
+        try {
+          if (!cacheDir) {
+            const root = await window.showDirectoryPicker({ mode: 'readwrite' });
+            cacheDir   = await root.getDirectoryHandle('cache', { create: true });
+          }
+          await writeFile(cacheDir, imgName,  capturedBlob);
+          await writeFile(cacheDir, jsonName, jsonBlob);
+          setStatus(`Saved to cache/${imgName} and cache/${jsonName}.`, 'ok');
+        } catch (err) {
+          if (err.name !== 'AbortError') setStatus(`Save error: ${err.message}`, 'error');
+        }
+      } else {
+        // Fallback: trigger browser downloads
+        triggerDownload(capturedBlob, imgName);
+        triggerDownload(jsonBlob, jsonName);
+        setStatus(`Downloaded ${imgName} and ${jsonName}.`, 'ok');
+      }
+    });
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    async function writeFile(dirHandle, filename, blob) {
+      const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
+      const writable   = await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+    }
+
+    function triggerDownload(blob, filename) {
+      const a  = document.createElement('a');
+      a.href   = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function setStatus(msg, type = '') {
+      statusEl.textContent = msg;
+      statusEl.className   = type;
+    }
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+
+    startCamera();
+  </script>
+</body>
+</html>

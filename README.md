@@ -1,5 +1,8 @@
 # AIS_Week_Workshop_3
 
+# Working environment
+*Miro Board: https://miro.com/app/board/uXjVG1T6fWw=/
+
 # Getting Started
 
 ## Software requirements
@@ -15,7 +18,7 @@
 
 * Miniconda: https://www.anaconda.com/download/success
 >
-Make sure to add installationto my PATH variable!
+Make sure to add installation to my PATH variable!
 >
 <img width="380" height="303" alt="image" src="https://github.com/user-attachments/assets/4cfaa5f0-4e73-40ca-ad57-cb58a58a7b3f" />
 

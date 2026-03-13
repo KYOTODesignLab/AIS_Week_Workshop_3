@@ -56,3 +56,19 @@ Then activate the environmet:
 ```
 conda activate AIS26
 ```
+
+IF THERE IS APROBLEM WITH PIP AND ULTRALYTICS:
+
+if you have Nvidia graphic card, you can use CUDA machine learning. Install the CUDA driver: https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_local
+
+Try to update the conda env:
+```
+conda env update -f environment.yml
+```
+
+If it doesn't work or if you don't have an Nvidia graphic card, install ultralitys into the AIS26 env manually with PIP
+
+```
+conda activate AIS26
+pip install ultralytics
+```

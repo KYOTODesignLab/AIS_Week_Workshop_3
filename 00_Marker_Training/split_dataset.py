@@ -1,6 +1,7 @@
 import os
 import shutil
 import random
+import yaml
 
 # Paths to your dataset folder
 dataset_path = os.path.join(os.path.dirname(__file__), "labelImg/marker_images/resized")
@@ -66,3 +67,20 @@ move_files(train_files, dataset_path, train_images_dir, train_labels_dir)
 move_files(val_files, dataset_path, val_images_dir, val_labels_dir)
 
 print(f"Dataset split completed! Train: {len(train_files)}, Val: {len(val_files)}")
+
+# Generate predefined_classes.txt and classes.txt from data.yaml
+data_yaml_path = os.path.join(os.path.dirname(__file__), "data.yaml")
+classes_dir = os.path.join(os.path.dirname(__file__), "labelImg/data")
+
+with open(data_yaml_path, "r") as f:
+    data = yaml.safe_load(f)
+
+class_names = data.get("names", [])
+classes_content = "\n".join(class_names) + "\n"
+
+for filename in ("predefined_classes.txt", "classes.txt"):
+    out_path = os.path.join(classes_dir, filename)
+    with open(out_path, "w") as f:
+        f.write(classes_content)
+
+print(f"Generated predefined_classes.txt and classes.txt with classes: {class_names}")

@@ -9,9 +9,8 @@
 
 1. Install the following on your system:
 
-* VS Code: https://code.visualstudio.com/
-* GIT : https://git-scm.com/
 
+* GIT : https://git-scm.com/
 
 > NOTE: On Mac, GIT is usually pre-installed, you do not need to install it again. To check if it is installed, open a terminal window and type `git`, if the result does not indicate any error, it means you already have it in your system.
 >
@@ -22,7 +21,7 @@ Make sure to add installation to my PATH variable!
 >
 <img width="380" height="303" alt="image" src="https://github.com/user-attachments/assets/4cfaa5f0-4e73-40ca-ad57-cb58a58a7b3f" />
 
-
+* VS Code: https://code.visualstudio.com/
 
 2. Open VS Code, and in the file menu, open your documents folder. Navigate to the terminal window (ctr + @).
 

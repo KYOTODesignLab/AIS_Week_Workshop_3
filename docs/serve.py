@@ -3,14 +3,15 @@ Local inference server — MQTT edition (no tunnel required).
 
 Image flow:  phone → MQTT public broker (HiveMQ) ← this server (paho-mqtt)
 YOLO runs:   locally on PC, results published back via MQTT
-Instagram:   server uploads cached image to imgbb → posts via Graph API
+Instagram:   server uploads cached image to Cloudinary → posts via Graph API
 
 Usage:
     1. pip install flask flask-cors ultralytics paho-mqtt requests
     2. Set env vars (optional — only needed for Instagram API posting):
-         IG_USER_ID  - Instagram Business/Creator account numeric ID
-         IG_TOKEN    - long-lived Instagram Graph API access token
-         IMGBB_KEY   - free API key from imgbb.com
+         IG_USER_ID             - Instagram Business/Creator account numeric ID
+         IG_TOKEN               - long-lived Instagram Graph API access token
+         CLOUDINARY_CLOUD_NAME  - Cloudinary cloud name (free at cloudinary.com)
+         CLOUDINARY_UPLOAD_PRESET - unsigned upload preset name
     3. python docs/serve.py
 
 MQTT topics:
@@ -41,9 +42,10 @@ MODEL_PATH = os.path.join(BASE_DIR, "..", "00_Marker_Training", "models", "AIS26
 CACHE_DIR  = os.path.join(BASE_DIR, "cache")
 PORT       = 5000
 
-IG_USER_ID = os.environ.get("IG_USER_ID", "1711765319078442")    # Instagram account numeric ID
-IG_TOKEN   = os.environ.get("IG_TOKEN",   "EAANpAC8CLA0BQ0YdLllVUtq7yFirRSrexEKe6t3l6aj5XazcuIYizfNd0ZCflNUCNlrV5sLwShRs6Mn6AYcV4aZBrZC9hdqVyn86V2oN6GrnXdzCcsk5guUeptMD3eZCeRjIharDzHwRSJP1H3W9KdZBLy9InrK23rZC6wJcZC8ppy6X6vl6RneAJnC8YTRuLaQuD5x")    # long-lived access token
-IMGBB_KEY  = os.environ.get("IMGBB_KEY",  "4c23a2eebade65fb8803949474a9d8bb")    # free at imgbb.com (for IG API posting)
+IG_USER_ID             = os.environ.get("17841445535736185",             "")  # Instagram Business account numeric ID
+IG_TOKEN               = os.environ.get("EAANpAC8CLA0BQ0YdLllVUtq7yFirRSrexEKe6t3l6aj5XazcuIYizfNd0ZCflNUCNlrV5sLwShRs6Mn6AYcV4aZBrZC9hdqVyn86V2oN6GrnXdzCcsk5guUeptMD3eZCeRjIharDzHwRSJP1H3W9KdZBLy9InrK23rZC6wJcZC8ppy6X6vl6RneAJnC8YTRuLaQuD5x",               "")  # long-lived access token
+CLOUDINARY_CLOUD_NAME  = os.environ.get("duiypvo1n",  "")  # free at cloudinary.com
+CLOUDINARY_UPLOAD_PRESET = os.environ.get("mikodigi", "")  # unsigned upload preset
 
 MQTT_BROKER    = "broker.hivemq.com"
 MQTT_PORT      = 1883
@@ -101,9 +103,9 @@ def _on_message(client, userdata, msg):
         print(f"Session {session_id}: {len(detections)} detections published")
 
         # Auto-post to Instagram if credentials are configured
-        if IG_USER_ID and IG_TOKEN and IMGBB_KEY:
+        if IG_USER_ID and IG_TOKEN and CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET:
             _post_to_instagram(client, session_id, ts, message)
-        elif IG_USER_ID or IG_TOKEN or IMGBB_KEY:
+        elif IG_USER_ID or IG_TOKEN:
             print("Instagram credentials incomplete — skipping auto-post")
 
     except Exception as e:
@@ -119,18 +121,20 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
         )
     try:
         with open(img_path, "rb") as f:
-            b64_img = base64.b64encode(f.read()).decode()
-        imgbb_res  = requests.post(
-            "https://api.imgbb.com/1/upload",
-            data={"key": IMGBB_KEY, "image": b64_img, "expiration": 600},
+            img_bytes = f.read()
+        cloudinary_res = requests.post(
+            f"https://api.cloudinary.com/v1_1/{CLOUDINARY_CLOUD_NAME}/image/upload",
+            data={"upload_preset": CLOUDINARY_UPLOAD_PRESET},
+            files={"file": ("capture.jpg", img_bytes, "image/jpeg")},
             timeout=30,
         )
-        imgbb_data = imgbb_res.json()
-        if not imgbb_data.get("success"):
-            print(f"imgbb upload failed: {imgbb_data}")
+        cloudinary_data = cloudinary_res.json()
+        public_url = cloudinary_data.get("secure_url")
+        if not public_url:
+            print(f"Cloudinary upload failed: {cloudinary_data}")
             _pub_status("public is inaccessible")
             return
-        public_url  = imgbb_data["data"]["url"]
+        print(f"Cloudinary URL: {public_url}")
         create_res  = requests.post(
             f"{IG_API}/{IG_USER_ID}/media",
             params={"image_url": public_url, "caption": caption, "access_token": IG_TOKEN},

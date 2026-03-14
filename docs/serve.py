@@ -24,6 +24,7 @@ Flask endpoints (localhost only, for Instagram API):
 """
 
 import base64
+import io
 import json
 import os
 import threading
@@ -33,6 +34,7 @@ import paho.mqtt.client as mqtt
 import requests
 from flask import Flask, jsonify
 from flask_cors import CORS
+from PIL import Image
 from ultralytics import YOLO
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -42,10 +44,10 @@ MODEL_PATH = os.path.join(BASE_DIR, "..", "00_Marker_Training", "models", "AIS26
 CACHE_DIR  = os.path.join(BASE_DIR, "cache")
 PORT       = 5000
 
-IG_USER_ID             = os.environ.get("17841445535736185",             "")  # Instagram Business account numeric ID
-IG_TOKEN               = os.environ.get("EAANpAC8CLA0BQ0YdLllVUtq7yFirRSrexEKe6t3l6aj5XazcuIYizfNd0ZCflNUCNlrV5sLwShRs6Mn6AYcV4aZBrZC9hdqVyn86V2oN6GrnXdzCcsk5guUeptMD3eZCeRjIharDzHwRSJP1H3W9KdZBLy9InrK23rZC6wJcZC8ppy6X6vl6RneAJnC8YTRuLaQuD5x",               "")  # long-lived access token
-CLOUDINARY_CLOUD_NAME  = os.environ.get("duiypvo1n",  "")  # free at cloudinary.com
-CLOUDINARY_UPLOAD_PRESET = os.environ.get("mikodigi", "")  # unsigned upload preset
+IG_USER_ID             = os.environ.get("IG_USER_ID",             "17841445535736185")  # Instagram Business account numeric ID
+IG_TOKEN               = os.environ.get("IG_TOKEN",               "EAANpAC8CLA0BQ0YdLllVUtq7yFirRSrexEKe6t3l6aj5XazcuIYizfNd0ZCflNUCNlrV5sLwShRs6Mn6AYcV4aZBrZC9hdqVyn86V2oN6GrnXdzCcsk5guUeptMD3eZCeRjIharDzHwRSJP1H3W9KdZBLy9InrK23rZC6wJcZC8ppy6X6vl6RneAJnC8YTRuLaQuD5x")  # long-lived access token
+CLOUDINARY_CLOUD_NAME  = os.environ.get("CLOUDINARY_CLOUD_NAME",  "duiypvo1n")  # free at cloudinary.com
+CLOUDINARY_UPLOAD_PRESET = os.environ.get("CLOUDINARY_UPLOAD_PRESET", "mikodigi")  # unsigned upload preset
 
 MQTT_BROKER    = "broker.hivemq.com"
 MQTT_PORT      = 1883
@@ -122,6 +124,16 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
     try:
         with open(img_path, "rb") as f:
             img_bytes = f.read()
+        # Center-crop to 1:1 square (always valid aspect ratio for Instagram)
+        img = Image.open(io.BytesIO(img_bytes))
+        w, h = img.size
+        side = min(w, h)
+        left = (w - side) // 2
+        top  = (h - side) // 2
+        img  = img.crop((left, top, left + side, top + side))
+        buf  = io.BytesIO()
+        img.save(buf, format="JPEG", quality=95)
+        img_bytes = buf.getvalue()
         cloudinary_res = requests.post(
             f"https://api.cloudinary.com/v1_1/{CLOUDINARY_CLOUD_NAME}/image/upload",
             data={"upload_preset": CLOUDINARY_UPLOAD_PRESET},

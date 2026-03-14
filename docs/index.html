@@ -18,8 +18,12 @@
       background: #000;
     }
 
-    body {
-      box-shadow: inset 0 0 0 2px #fff;
+    #border-frame {
+      position: fixed;
+      inset: 0;
+      border: 2px solid #fff;
+      pointer-events: none;
+      z-index: 30;
     }
 
     #msg-bar {
@@ -63,6 +67,15 @@
       transition: transform 0.1s;
       z-index: 10;
     }
+    #crop-guide {
+      position: fixed;
+      border: 1px solid rgba(255,255,255,0.5);
+      pointer-events: none;
+      z-index: 5;
+      /* dims the areas outside the crop zone */
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+    }
+
     .fab:active { transform: scale(0.90); }
 
     #capture-btn {
@@ -81,6 +94,8 @@
 </head>
 <body>
 
+  <div id="border-frame"></div>
+  <div id="crop-guide"></div>
   <div id="msg-bar"></div>
   <video id="preview" autoplay playsinline muted></video>
   <img   id="snapshot" alt="" />
@@ -95,6 +110,17 @@
     const canvas     = document.getElementById('canvas');
     const captureBtn = document.getElementById('capture-btn');
     const sendBtn    = document.getElementById('send-btn');
+    const cropGuide  = document.getElementById('crop-guide');
+
+    function sizeCropGuide() {
+      const side = Math.min(window.innerWidth, window.innerHeight);
+      cropGuide.style.width  = side + 'px';
+      cropGuide.style.height = side + 'px';
+      cropGuide.style.left   = ((window.innerWidth  - side) / 2) + 'px';
+      cropGuide.style.top    = ((window.innerHeight - side) / 2) + 'px';
+    }
+    sizeCropGuide();
+    window.addEventListener('resize', sizeCropGuide);
 
     const sessionId  = Math.random().toString(36).slice(2) + Date.now().toString(36);
     let mqttClient   = null;

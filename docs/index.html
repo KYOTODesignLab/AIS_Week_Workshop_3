@@ -26,19 +26,34 @@
       z-index: 30;
     }
 
+    #title-bar {
+      position: fixed;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300;
+      font-size: 1.15rem;
+      letter-spacing: 0.10em;
+      color: rgba(255,255,255,0.9);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 40;
+    }
+
     #msg-bar {
       position: fixed;
-      top: 18px;
+      top: 52px;
       left: 50%;
       transform: translateX(-50%);
       font-family: 'Roboto', sans-serif;
       font-weight: 300;
       font-size: 0.8rem;
       letter-spacing: 0.06em;
-      color: rgba(255,255,255,0.85);
+      color: rgba(255,255,255,0.75);
       pointer-events: none;
       white-space: nowrap;
-      z-index: 20;
+      z-index: 40;
       opacity: 0;
       transition: opacity 0.4s;
     }
@@ -96,6 +111,7 @@
 
   <div id="border-frame"></div>
   <div id="crop-guide"></div>
+  <div id="title-bar">Mikoshi Visualizer</div>
   <div id="msg-bar"></div>
   <video id="preview" autoplay playsinline muted></video>
   <img   id="snapshot" alt="" />

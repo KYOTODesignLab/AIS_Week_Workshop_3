@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AIS Capture</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -18,6 +21,24 @@
     body {
       outline: 2px solid #fff;
     }
+
+    #msg-bar {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.85);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    #msg-bar.visible { opacity: 1; }
 
     #preview, #snapshot {
       position: fixed;
@@ -58,6 +79,7 @@
 </head>
 <body>
 
+  <div id="msg-bar"></div>
   <video id="preview" autoplay playsinline muted></video>
   <img   id="snapshot" alt="" />
   <canvas id="canvas"></canvas>
@@ -78,6 +100,15 @@
     let stream       = null;
     let capturedBlob = null;
     let inStill      = false;
+    const msgBar     = document.getElementById('msg-bar');
+    let msgTimer     = null;
+
+    function showMessage(text) {
+      clearTimeout(msgTimer);
+      msgBar.textContent = text;
+      msgBar.classList.add('visible');
+      msgTimer = setTimeout(() => msgBar.classList.remove('visible'), 3000);
+    }
 
     // ── Camera ────────────────────────────────────────────────────────────────
 
@@ -161,6 +192,12 @@
       });
       mqttClient.on('error',     () => { mqttReady = false; });
       mqttClient.on('reconnect', () => { mqttReady = false; });
+      mqttClient.on('message', (_topic, payload) => {
+        try {
+          const data = JSON.parse(payload.toString());
+          if (data.status) showMessage(data.status);
+        } catch {}
+      });
     }
 
     startCamera();

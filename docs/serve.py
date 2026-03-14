@@ -96,13 +96,13 @@ def _on_message(client, userdata, msg):
 
         client.publish(
             f"{MQTT_TOPIC_RES}/{session_id}",
-            json.dumps({"timestamp": ts, "detections": detections})
+            json.dumps({"timestamp": ts, "detections": detections, "status": "vision received"})
         )
         print(f"Session {session_id}: {len(detections)} detections published")
 
         # Auto-post to Instagram if credentials are configured
         if IG_USER_ID and IG_TOKEN and IMGBB_KEY:
-            _post_to_instagram(ts, caption)
+            _post_to_instagram(client, session_id, ts, message)
         elif IG_USER_ID or IG_TOKEN or IMGBB_KEY:
             print("Instagram credentials incomplete — skipping auto-post")
 
@@ -110,8 +110,13 @@ def _on_message(client, userdata, msg):
         print(f"MQTT message error: {e}")
 
 
-def _post_to_instagram(ts, caption):
+def _post_to_instagram(mqtt_client, session_id, ts, caption):
     img_path = os.path.join(CACHE_DIR, f"{ts}.jpg")
+    def _pub_status(msg):
+        mqtt_client.publish(
+            f"{MQTT_TOPIC_RES}/{session_id}",
+            json.dumps({"status": msg})
+        )
     try:
         with open(img_path, "rb") as f:
             b64_img = base64.b64encode(f.read()).decode()
@@ -123,6 +128,7 @@ def _post_to_instagram(ts, caption):
         imgbb_data = imgbb_res.json()
         if not imgbb_data.get("success"):
             print(f"imgbb upload failed: {imgbb_data}")
+            _pub_status("public is inaccessible")
             return
         public_url  = imgbb_data["data"]["url"]
         create_res  = requests.post(
@@ -133,6 +139,7 @@ def _post_to_instagram(ts, caption):
         creation_id = create_res.json().get("id")
         if not creation_id:
             print(f"IG media creation failed: {create_res.json()}")
+            _pub_status("public is inaccessible")
             return
         pub_res = requests.post(
             f"{IG_API}/{IG_USER_ID}/media_publish",
@@ -140,9 +147,15 @@ def _post_to_instagram(ts, caption):
             timeout=15,
         )
         post_id = pub_res.json().get("id")
-        print(f"Instagram post published: {post_id}" if post_id else f"IG publish failed: {pub_res.json()}")
+        if post_id:
+            print(f"Instagram post published: {post_id}")
+            _pub_status("multydimension vision is shared to public")
+        else:
+            print(f"IG publish failed: {pub_res.json()}")
+            _pub_status("public is inaccessible")
     except Exception as e:
         print(f"Instagram auto-post error: {e}")
+        _pub_status("public is inaccessible")
 
 
 def _start_mqtt():

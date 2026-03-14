@@ -20,21 +20,14 @@
 
   <div class="controls">
     <div id="mqtt-status">MQTT: connecting…</div>
-    <input id="server-url" type="url" placeholder="Flask server URL (Instagram API posting only)" />
     <div class="row">
       <button id="capture-btn">📷 Capture</button>
       <button id="retake-btn">↩ Retake</button>
     </div>
     <textarea id="message" placeholder="Enter your message…"></textarea>
-    <button id="save-btn" disabled>⬆️ Send &amp; Analyse</button>
+    <button id="save-btn" disabled>⬆️ Send &amp; Process</button>
     <button id="share-btn" disabled>📤 Share to Instagram</button>
-    <button id="ig-post-btn" disabled>📸 Post to Instagram</button>
     <div id="status"></div>
-  </div>
-
-  <div id="results" hidden>
-    <h2>Detections</h2>
-    <ul id="detections-list"></ul>
   </div>
 
   <script>
@@ -46,19 +39,14 @@
     const saveBtn       = document.getElementById('save-btn');
     const messageEl     = document.getElementById('message');
     const statusEl      = document.getElementById('status');
-    const serverUrlEl   = document.getElementById('server-url');
-    const resultsEl     = document.getElementById('results');
-    const detectionsEl  = document.getElementById('detections-list');
     const shareBtn      = document.getElementById('share-btn');
-    const igPostBtn     = document.getElementById('ig-post-btn');
     const mqttStatusEl  = document.getElementById('mqtt-status');
 
-    const sessionId  = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    let mqttClient   = null;
-    let mqttReady    = false;
-    let stream       = null;
+    const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    let mqttClient  = null;
+    let mqttReady   = false;
+    let stream      = null;
     let capturedBlob = null;
-    let lastTimestamp = null;
 
     // ── Camera ────────────────────────────────────────────────────────────────
 
@@ -114,79 +102,64 @@
       preview.style.display  = 'block';
       captureBtn.style.display = '';
       retakeBtn.style.display  = 'none';
-      saveBtn.disabled   = true;
-      shareBtn.disabled  = true;
-      igPostBtn.disabled = true;
-      lastTimestamp      = null;
+      saveBtn.disabled  = true;
+      shareBtn.disabled = true;
       setStatus('');
     });
 
-    // ── Send & Analyse ────────────────────────────────────────────────────────
+    // ── Send & Process (MQTT) ────────────────────────────────────────────────────────
 
-    saveBtn.addEventListener('click', async () => {
-      if (!capturedBlob) return;
-
-      const serverUrl = serverUrlEl.value.trim().replace(/\/$/, '');
-      if (!serverUrl) {
-        setStatus('Please enter the server URL first.', 'error');
+    saveBtn.addEventListener('click', () => {
+      if (!capturedBlob || !mqttReady) {
+        setStatus('MQTT not connected yet.', 'error');
         return;
       }
-
-      setStatus('Uploading…');
+      setStatus('Sending…');
       saveBtn.disabled = true;
+      const reader = new FileReader();
+      reader.onload = () => {
+        mqttClient.publish(
+          `ais-workshop/image/${sessionId}`,
+          JSON.stringify({
+            session_id: sessionId,
+            image:      reader.result.split(',')[1],
+            message:    messageEl.value
+          })
+        );
+        setStatus('Sent — processing on PC…');
+      };
+      reader.readAsDataURL(capturedBlob);
+    });
 
-      const form = new FormData();
-      form.append('image',   capturedBlob, 'capture.jpg');
-      form.append('message', messageEl.value);
+    // ── MQTT ─────────────────────────────────────────────────────────────────────
 
-      try {
-        const res  = await fetch(`${serverUrl}/upload`, { method: 'POST', body: form });
-        if (!res.ok) throw new Error(`Server responded ${res.status}`);
-        const data = await res.json();
-
-        setStatus(`Done — ${data.detections.length} detection(s).`, 'ok');
-        lastTimestamp = data.timestamp;
-        igPostBtn.disabled = false;
-        showDetections(data.detections);
-      } catch (err) {
-        setStatus(`Upload error: ${err.message}`, 'error');
-      } finally {
+    function connectMQTT() {
+      mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
+        clientId:        `ais-web-${sessionId}`,
+        clean:           true,
+        reconnectPeriod: 3000,
+      });
+      mqttClient.on('connect', () => {
+        mqttReady = true;
+        mqttStatusEl.textContent = 'MQTT: connected ✓';
+        mqttStatusEl.className   = 'ok';
+        mqttClient.subscribe(`ais-workshop/result/${sessionId}`);
+      });
+      mqttClient.on('error', err => {
+        mqttReady = false;
+        mqttStatusEl.textContent = `MQTT error: ${err.message}`;
+        mqttStatusEl.className   = 'error';
+      });
+      mqttClient.on('reconnect', () => {
+        mqttReady = false;
+        mqttStatusEl.textContent = 'MQTT: reconnecting…';
+        mqttStatusEl.className   = '';
+      });
+      mqttClient.on('message', () => {
         saveBtn.disabled = false;
-      }
-    });
-
-    function showDetections(detections) {
-      detectionsEl.innerHTML = '';
-      if (detections.length === 0) {
-        detectionsEl.innerHTML = '<li>No detections.</li>';
-      } else {
-        detections.forEach(d => {
-          const li = document.createElement('li');
-          li.textContent = `${d.label}  (${(d.confidence * 100).toFixed(1)}%)  `
-            + `[${d.box.x1}, ${d.box.y1}, ${d.box.x2}, ${d.box.y2}]`;
-          detectionsEl.appendChild(li);
-        });
-      }
-      resultsEl.hidden = false;
+        setStatus('Done — image processed and posted to Instagram.', 'ok');
+      });
     }
-
-    // ── Post to Instagram (via server) ────────────────────────────────────────
-
-    igPostBtn.addEventListener('click', async () => {
-      const serverUrl = serverUrlEl.value.trim().replace(/\/$/, '');
-      if (!serverUrl || !lastTimestamp) return;
-      setStatus('Posting to Instagram…');
-      igPostBtn.disabled = true;
-      try {
-        const res  = await fetch(`${serverUrl}/post-instagram/${lastTimestamp}`, { method: 'POST' });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || `Server ${res.status}`);
-        setStatus(`Posted! Instagram post id: ${data.post_id}`, 'ok');
-      } catch (err) {
-        setStatus(`Instagram error: ${err.message}`, 'error');
-        igPostBtn.disabled = false;
-      }
-    });
 
     // ── Share to Instagram ────────────────────────────────────────────────────
 
@@ -220,6 +193,8 @@
 
     // ── Init ──────────────────────────────────────────────────────────────────
 
-    startCamera();    connectMQTT();  </script>
+    startCamera();
+    connectMQTT();
+  </script>
 </body>
 </html>

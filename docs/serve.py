@@ -100,8 +100,49 @@ def _on_message(client, userdata, msg):
         )
         print(f"Session {session_id}: {len(detections)} detections published")
 
+        # Auto-post to Instagram if credentials are configured
+        if IG_USER_ID and IG_TOKEN and IMGBB_KEY:
+            _post_to_instagram(ts, caption)
+        elif IG_USER_ID or IG_TOKEN or IMGBB_KEY:
+            print("Instagram credentials incomplete — skipping auto-post")
+
     except Exception as e:
         print(f"MQTT message error: {e}")
+
+
+def _post_to_instagram(ts, caption):
+    img_path = os.path.join(CACHE_DIR, f"{ts}.jpg")
+    try:
+        with open(img_path, "rb") as f:
+            b64_img = base64.b64encode(f.read()).decode()
+        imgbb_res  = requests.post(
+            "https://api.imgbb.com/1/upload",
+            data={"key": IMGBB_KEY, "image": b64_img, "expiration": 600},
+            timeout=30,
+        )
+        imgbb_data = imgbb_res.json()
+        if not imgbb_data.get("success"):
+            print(f"imgbb upload failed: {imgbb_data}")
+            return
+        public_url  = imgbb_data["data"]["url"]
+        create_res  = requests.post(
+            f"{IG_API}/{IG_USER_ID}/media",
+            params={"image_url": public_url, "caption": caption, "access_token": IG_TOKEN},
+            timeout=15,
+        )
+        creation_id = create_res.json().get("id")
+        if not creation_id:
+            print(f"IG media creation failed: {create_res.json()}")
+            return
+        pub_res = requests.post(
+            f"{IG_API}/{IG_USER_ID}/media_publish",
+            params={"creation_id": creation_id, "access_token": IG_TOKEN},
+            timeout=15,
+        )
+        post_id = pub_res.json().get("id")
+        print(f"Instagram post published: {post_id}" if post_id else f"IG publish failed: {pub_res.json()}")
+    except Exception as e:
+        print(f"Instagram auto-post error: {e}")
 
 
 def _start_mqtt():
@@ -126,71 +167,6 @@ CORS(app)
 @app.get("/health")
 def health():
     return jsonify({"status": "ok"})
-
-
-@app.post("/post-instagram/<int:ts>")
-def post_instagram(ts):
-    """Post the cached image for <ts> to Instagram via Graph API."""
-    if not IG_USER_ID or not IG_TOKEN:
-        return jsonify({"error": "IG_USER_ID and IG_TOKEN must be set"}), 503
-    if not IMGBB_KEY:
-        return jsonify({"error": "IMGBB_KEY must be set (free at imgbb.com)"}), 503
-
-    img_path = os.path.join(CACHE_DIR, f"{ts}.jpg")
-    if not os.path.exists(img_path):
-        return jsonify({"error": f"No cached image for timestamp {ts}"}), 404
-
-    # Read caption from matching JSON if present
-    json_path = os.path.join(CACHE_DIR, f"{ts}.json")
-    caption = ""
-    if os.path.exists(json_path):
-        with open(json_path) as f:
-            caption = json.load(f).get("message", "")
-
-    # Upload to imgbb to get a temporary public URL for the Instagram API
-    with open(img_path, "rb") as f:
-        b64_img = base64.b64encode(f.read()).decode()
-    imgbb_res = requests.post(
-        "https://api.imgbb.com/1/upload",
-        data={"key": IMGBB_KEY, "image": b64_img, "expiration": 600},
-        timeout=30,
-    )
-    imgbb_data = imgbb_res.json()
-    if not imgbb_data.get("success"):
-        return jsonify({"error": "imgbb upload failed", "detail": imgbb_data}), 502
-
-    public_url = imgbb_data["data"]["url"]
-
-    # Step 1 — create media container
-    create_res = requests.post(
-        f"{IG_API}/{IG_USER_ID}/media",
-        params={
-            "image_url":    public_url,
-            "caption":      caption,
-            "access_token": IG_TOKEN,
-        },
-        timeout=15,
-    )
-    create_data = create_res.json()
-    if "id" not in create_data:
-        return jsonify({"error": "Media creation failed", "detail": create_data}), 502
-
-    creation_id = create_data["id"]
-
-    # Step 2 — publish
-    publish_res = requests.post(
-        f"{IG_API}/{IG_USER_ID}/media_publish",
-        params={
-            "creation_id":  creation_id,
-            "access_token": IG_TOKEN,
-        },
-        timeout=15,
-    )
-    publish_data = publish_res.json()
-    if "id" not in publish_data:
-        return jsonify({"error": "Publish failed", "detail": publish_data}), 502
-
-    return jsonify({"post_id": publish_data["id"]})
 
 
 if __name__ == "__main__":

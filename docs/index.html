@@ -3,135 +3,151 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Photo Capture</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>AIS Capture</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    body {
+      outline: 2px solid #fff;
+    }
+
+    #preview, #snapshot {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #snapshot { display: none; }
+    canvas    { display: none; }
+
+    .fab {
+      position: fixed;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+      transition: transform 0.1s;
+    }
+    .fab:active { transform: scale(0.90); }
+
+    #capture-btn {
+      background: #e53e3e;
+      bottom: 50px;
+      right: 50px;
+    }
+
+    #send-btn {
+      background: #3182ce;
+      bottom: 50px;
+      left: 50px;
+      display: none;
+    }
+  </style>
 </head>
 <body>
 
-  <h1>Photo Capture</h1>
-
-  <div id="viewport">
-    <video id="preview" autoplay playsinline muted></video>
-    <img  id="snapshot" alt="Captured photo" />
-  </div>
-
+  <video id="preview" autoplay playsinline muted></video>
+  <img   id="snapshot" alt="" />
   <canvas id="canvas"></canvas>
 
-  <div class="controls">
-    <div id="mqtt-status">MQTT: connecting…</div>
-    <div class="row">
-      <button id="capture-btn">📷 Capture</button>
-      <button id="retake-btn">↩ Retake</button>
-    </div>
-    <textarea id="message" placeholder="Enter your message…"></textarea>
-    <button id="save-btn" disabled>⬆️ Send &amp; Process</button>
-    <button id="share-btn" disabled>📤 Share to Instagram</button>
-    <div id="status"></div>
-  </div>
+  <button id="capture-btn" class="fab"></button>
+  <button id="send-btn"    class="fab"></button>
 
   <script>
-    const preview       = document.getElementById('preview');
-    const snapshot      = document.getElementById('snapshot');
-    const canvas        = document.getElementById('canvas');
-    const captureBtn    = document.getElementById('capture-btn');
-    const retakeBtn     = document.getElementById('retake-btn');
-    const saveBtn       = document.getElementById('save-btn');
-    const messageEl     = document.getElementById('message');
-    const statusEl      = document.getElementById('status');
-    const shareBtn      = document.getElementById('share-btn');
-    const mqttStatusEl  = document.getElementById('mqtt-status');
+    const preview    = document.getElementById('preview');
+    const snapshot   = document.getElementById('snapshot');
+    const canvas     = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture-btn');
+    const sendBtn    = document.getElementById('send-btn');
 
-    const sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    let mqttClient  = null;
-    let mqttReady   = false;
-    let stream      = null;
+    const sessionId  = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    let mqttClient   = null;
+    let mqttReady    = false;
+    let stream       = null;
     let capturedBlob = null;
+    let inStill      = false;
 
     // ── Camera ────────────────────────────────────────────────────────────────
 
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width:     { ideal: 4096 },
-            height:    { ideal: 2160 },
-            facingMode: { ideal: 'environment' }
-          },
+          video: { width: { ideal: 4096 }, height: { ideal: 2160 }, facingMode: { ideal: 'environment' } },
           audio: false
         });
         preview.srcObject = stream;
-        setStatus('Camera ready.');
       } catch (err) {
-        setStatus(`Camera error: ${err.message}`, 'error');
+        console.error('Camera error:', err);
       }
     }
 
-    // ── Capture ───────────────────────────────────────────────────────────────
+    // ── Capture / Retake ──────────────────────────────────────────────────────
 
     captureBtn.addEventListener('click', () => {
-      const track    = stream?.getVideoTracks()[0];
-      const settings = track?.getSettings() ?? {};
-      const w = settings.width  || preview.videoWidth;
-      const h = settings.height || preview.videoHeight;
-
-      canvas.width  = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(preview, 0, 0, w, h);
-
-      canvas.toBlob(blob => {
-        capturedBlob = blob;
-        snapshot.src           = URL.createObjectURL(blob);
-        snapshot.style.display = 'block';
-        preview.style.display  = 'none';
-        captureBtn.style.display = 'none';
-        retakeBtn.style.display  = '';
-        saveBtn.disabled  = false;
-        shareBtn.disabled = false;
-        setStatus(`Captured at ${w} × ${h} px.`);
-      }, 'image/jpeg', 0.95);
-    });
-
-    // ── Retake ────────────────────────────────────────────────────────────────
-
-    retakeBtn.addEventListener('click', () => {
-      if (snapshot.src) URL.revokeObjectURL(snapshot.src);
-      capturedBlob = null;
-      snapshot.src           = '';
-      snapshot.style.display = 'none';
-      preview.style.display  = 'block';
-      captureBtn.style.display = '';
-      retakeBtn.style.display  = 'none';
-      saveBtn.disabled  = true;
-      shareBtn.disabled = true;
-      setStatus('');
-    });
-
-    // ── Send & Process (MQTT) ────────────────────────────────────────────────────────
-
-    saveBtn.addEventListener('click', () => {
-      if (!capturedBlob || !mqttReady) {
-        setStatus('MQTT not connected yet.', 'error');
-        return;
+      if (inStill) {
+        // Dump still → back to video
+        if (snapshot.src) URL.revokeObjectURL(snapshot.src);
+        capturedBlob           = null;
+        snapshot.src           = '';
+        snapshot.style.display = 'none';
+        preview.style.display  = '';
+        sendBtn.style.display  = 'none';
+        inStill = false;
+      } else {
+        // Take stillshot
+        const track    = stream?.getVideoTracks()[0];
+        const settings = track?.getSettings() ?? {};
+        const w = settings.width  || preview.videoWidth;
+        const h = settings.height || preview.videoHeight;
+        canvas.width  = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(preview, 0, 0, w, h);
+        canvas.toBlob(blob => {
+          capturedBlob           = blob;
+          snapshot.src           = URL.createObjectURL(blob);
+          snapshot.style.display = 'block';
+          preview.style.display  = 'none';
+          sendBtn.style.display  = 'block';
+          inStill = true;
+        }, 'image/jpeg', 0.95);
       }
-      setStatus('Sending…');
-      saveBtn.disabled = true;
+    });
+
+    // ── Send via MQTT ─────────────────────────────────────────────────────────
+
+    sendBtn.addEventListener('click', () => {
+      if (!capturedBlob || !mqttReady) return;
       const reader = new FileReader();
       reader.onload = () => {
         mqttClient.publish(
           `ais-workshop/image/${sessionId}`,
-          JSON.stringify({
-            session_id: sessionId,
-            image:      reader.result.split(',')[1],
-            message:    messageEl.value
-          })
+          JSON.stringify({ session_id: sessionId, image: reader.result.split(',')[1], message: '' })
         );
-        setStatus('Sent — processing on PC…');
+        // Return to video
+        if (snapshot.src) URL.revokeObjectURL(snapshot.src);
+        capturedBlob           = null;
+        snapshot.src           = '';
+        snapshot.style.display = 'none';
+        preview.style.display  = '';
+        sendBtn.style.display  = 'none';
+        inStill = false;
       };
       reader.readAsDataURL(capturedBlob);
     });
 
-    // ── MQTT ─────────────────────────────────────────────────────────────────────
+    // ── MQTT ──────────────────────────────────────────────────────────────────
 
     function connectMQTT() {
       mqttClient = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', {
@@ -141,57 +157,11 @@
       });
       mqttClient.on('connect', () => {
         mqttReady = true;
-        mqttStatusEl.textContent = 'MQTT: connected ✓';
-        mqttStatusEl.className   = 'ok';
         mqttClient.subscribe(`ais-workshop/result/${sessionId}`);
       });
-      mqttClient.on('error', err => {
-        mqttReady = false;
-        mqttStatusEl.textContent = `MQTT error: ${err.message}`;
-        mqttStatusEl.className   = 'error';
-      });
-      mqttClient.on('reconnect', () => {
-        mqttReady = false;
-        mqttStatusEl.textContent = 'MQTT: reconnecting…';
-        mqttStatusEl.className   = '';
-      });
-      mqttClient.on('message', () => {
-        saveBtn.disabled = false;
-        setStatus('Done — image processed and posted to Instagram.', 'ok');
-      });
+      mqttClient.on('error',     () => { mqttReady = false; });
+      mqttClient.on('reconnect', () => { mqttReady = false; });
     }
-
-    // ── Share to Instagram ────────────────────────────────────────────────────
-
-    shareBtn.addEventListener('click', async () => {
-      if (!capturedBlob) return;
-      if (!navigator.canShare) {
-        setStatus('Web Share not supported on this browser/device.', 'error');
-        return;
-      }
-      const file = new File([capturedBlob], `capture_${Date.now()}.jpg`, { type: 'image/jpeg' });
-      if (!navigator.canShare({ files: [file] })) {
-        setStatus('This browser cannot share files.', 'error');
-        return;
-      }
-      try {
-        await navigator.share({
-          files: [file],
-          title: messageEl.value || 'Photo Capture'
-        });
-      } catch (err) {
-        if (err.name !== 'AbortError') setStatus(`Share error: ${err.message}`, 'error');
-      }
-    });
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    function setStatus(msg, type = '') {
-      statusEl.textContent = msg;
-      statusEl.className   = type;
-    }
-
-    // ── Init ──────────────────────────────────────────────────────────────────
 
     startCamera();
     connectMQTT();

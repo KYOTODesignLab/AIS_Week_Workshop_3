@@ -41,9 +41,9 @@ MODEL_PATH = os.path.join(BASE_DIR, "..", "00_Marker_Training", "models", "AIS26
 CACHE_DIR  = os.path.join(BASE_DIR, "cache")
 PORT       = 5000
 
-IG_USER_ID = os.environ.get("IG_USER_ID", "")    # Instagram account numeric ID
-IG_TOKEN   = os.environ.get("IG_TOKEN",   "")    # long-lived access token
-IMGBB_KEY  = os.environ.get("IMGBB_KEY",  "")    # free at imgbb.com (for IG API posting)
+IG_USER_ID = os.environ.get("IG_USER_ID", "1711765319078442")    # Instagram account numeric ID
+IG_TOKEN   = os.environ.get("IG_TOKEN",   "EAANpAC8CLA0BQ0YdLllVUtq7yFirRSrexEKe6t3l6aj5XazcuIYizfNd0ZCflNUCNlrV5sLwShRs6Mn6AYcV4aZBrZC9hdqVyn86V2oN6GrnXdzCcsk5guUeptMD3eZCeRjIharDzHwRSJP1H3W9KdZBLy9InrK23rZC6wJcZC8ppy6X6vl6RneAJnC8YTRuLaQuD5x")    # long-lived access token
+IMGBB_KEY  = os.environ.get("IMGBB_KEY",  "4c23a2eebade65fb8803949474a9d8bb")    # free at imgbb.com (for IG API posting)
 
 MQTT_BROKER    = "broker.hivemq.com"
 MQTT_PORT      = 1883
@@ -171,7 +171,7 @@ def health():
 
 if __name__ == "__main__":
     print(f"MQTT  → {MQTT_BROKER}:{MQTT_PORT}  topics: {MQTT_TOPIC_IMG}/+")
-    print(f"Flask → http://0.0.0.0:{PORT}  (Instagram API only)")
+    print(f"Flask → https://0.0.0.0:{PORT}  (Instagram API only)")
     print(f"Model: {MODEL_PATH}")
     print(f"Instagram: user={IG_USER_ID or '(not set)'}, token={'set' if IG_TOKEN else '(not set)'}")
-    app.run(host="0.0.0.0", port=PORT, debug=False)
+    app.run(host="0.0.0.0", port=PORT, debug=False, ssl_context="adhoc")

@@ -1,0 +1,90 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1rem 2rem;
+  gap: 1rem;
+}
+
+h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
+
+#viewport {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  background: #000;
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+}
+
+#preview, #snapshot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+#snapshot { display: none; }
+#canvas   { display: none; }
+
+.controls {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+button {
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#capture-btn { background: #2563eb; color: #fff; }
+#retake-btn  { background: #475569; color: #fff; display: none; }
+#save-btn    { background: #16a34a; color: #fff; }
+#share-btn   { background: #9333ea; color: #fff; }
+
+#message {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 7px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 90px;
+}
+#message::placeholder { color: #64748b; }
+
+#status {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  min-height: 1.2em;
+}
+#status.error { color: #f87171; }
+#status.ok    { color: #4ade80; }
+
+#mqtt-status {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  padding: 0.25rem 0;
+}
+#mqtt-status.ok    { color: #4ade80; }
+#mqtt-status.error { color: #f87171; }

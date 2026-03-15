@@ -1,0 +1,58 @@
+{
+  "timestamp": 1773576373461,
+  "session_id": "5t93fd2t9lsmmrpj6d4",
+  "message": "",
+  "nickname": "gergo",
+  "location": {
+    "latitude": 35.04947420484788,
+    "longitude": 135.78314862657984,
+    "accuracy": 28.062630424425922
+  },
+  "orientation": {
+    "alpha": 14.25,
+    "beta": 52.87,
+    "gamma": -5.66
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.762,
+      "box": {
+        "x1": 1323,
+        "y1": 2073,
+        "x2": 1575,
+        "y2": 2337
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.629,
+      "box": {
+        "x1": 1285,
+        "y1": 1294,
+        "x2": 1555,
+        "y2": 1669
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.486,
+      "box": {
+        "x1": 1586,
+        "y1": 1513,
+        "x2": 1762,
+        "y2": 1784
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.335,
+      "box": {
+        "x1": 1383,
+        "y1": 2371,
+        "x2": 1595,
+        "y2": 2564
+      }
+    }
+  ]
+}

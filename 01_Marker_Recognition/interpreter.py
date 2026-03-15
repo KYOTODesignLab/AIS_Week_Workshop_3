@@ -1,11 +1,17 @@
 import os
+import sys
 import cv2
 import numpy as np
 from compas.datastructures import Mesh
 from compas.geometry import Box, Frame, Point, Torus, Vector
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from geometry_surface_model import CubeSurface
+
 _TEXTURE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "elements", "textures", "leopard_texture.jpg")
+_MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "elements", "models", "AIS26_03_mesh.obj")
 
 # -- Configuration -----------------------------------------------------------
 
@@ -13,27 +19,24 @@ class MarkerConfig:
     """YOLO label names and physical spacing for the 4-marker layout."""
 
     def __init__(self, origin_label="o", x_label="x",
-                 ambiguous_label="tri", dist=1.0,
+                 y_label="tri_o", corner_label="tri_x", dist=1.0,
                  geometry_labels=None, modifier_labels=None):
-        self.origin_label    = origin_label
-        self.x_label         = x_label
-        self.ambiguous_label = ambiguous_label
-        self.dist            = dist
-
-        # Stable internal names for the two disambiguated markers
-        self.y_role      = f"{ambiguous_label}_{origin_label}"   # e.g. "tri_o"
-        self.corner_role = f"{ambiguous_label}_{x_label}"        # e.g. "tri_x"
+        self.origin_label = origin_label
+        self.x_label      = x_label
+        self.y_label      = y_label
+        self.corner_label = corner_label
+        self.dist         = dist
 
         # Abstract 3-D positions in the local marker coordinate system
         self.positions = {
-            origin_label:     Point(0,    0,    0),
-            x_label:          Point(dist, 0,    0),
-            self.y_role:      Point(0,    dist, 0),
-            self.corner_role: Point(dist, dist, 0),
+            origin_label: Point(0,    0,    0),
+            x_label:      Point(dist, 0,    0),
+            y_label:      Point(0,    dist, 0),
+            corner_label: Point(dist, dist, 0),
         }
 
         # Base markers define the coordinate frame (solvePnP uses these)
-        self.base_roles = [origin_label, x_label, self.y_role, self.corner_role]
+        self.base_roles = [origin_label, x_label, y_label, corner_label]
         self.all_roles  = self.base_roles
 
         # Geometry markers: each detected instance places a shape in the scene
@@ -85,10 +88,10 @@ class MarkerDetector:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # computed once for all boxes
 
         named = {}   # role → Marker
-        tris  = []   # (cx, cy, confidence, size) for the ambiguous label
 
-        geo_set = set(cfg.geometry_labels)
-        mod_set = set(cfg.modifier_labels)
+        geo_set  = set(cfg.geometry_labels)
+        mod_set  = set(cfg.modifier_labels)
+        base_set = set(cfg.base_roles)
 
         for box, cls, conf in zip(self._last_results.boxes.xyxy,
                                    self._last_results.boxes.cls,
@@ -103,26 +106,12 @@ class MarkerDetector:
             if not valid:
                 continue
 
-            if name == cfg.ambiguous_label:
-                tris.append((cx, cy, c, size))
+            if name in base_set:
+                named[name] = Marker(name, c, (cx, cy), size, role_type="base")
             elif name in geo_set:
                 named[name] = Marker(name, c, (cx, cy), size, role_type="geometry")
             elif name in mod_set:
                 named[name] = Marker(name, c, (cx, cy), size, role_type="modifier")
-            else:
-                named[name] = Marker(name, c, (cx, cy), size, role_type="base")
-
-        # Disambiguate: smaller projection onto o->x axis => y_role
-        if tris and cfg.origin_label in named and cfg.x_label in named:
-            o_pt = np.array(named[cfg.origin_label].image_point, dtype=np.float64)
-            x_pt = np.array(named[cfg.x_label].image_point,      dtype=np.float64)
-            axis = x_pt - o_pt
-            len2 = float(axis @ axis)
-            if len2 > 0:
-                def score(t): return float((np.array(t[:2]) - o_pt) @ axis) / len2
-                for role, tri in zip([cfg.y_role, cfg.corner_role],
-                                     sorted(tris, key=score)):
-                    named[role] = Marker(role, tri[2], (tri[0], tri[1]), tri[3], role_type="base")
 
         return list(named.values())
 
@@ -188,8 +177,8 @@ class BaseFrame:
 
     def _solve(self):
         cfg       = self.config
-        available = [k for k in cfg.all_roles if k in self._by_name]
-        if len(available) < 3:
+        available = [k for k in cfg.base_roles if k in self._by_name]
+        if len(available) < 4:  # all 4 base markers required
             return
 
         obj_pts = np.array(
@@ -333,6 +322,65 @@ class PlaceTorus:
         return [Torus(self.torus_radius, self.tube_radius, frame=f)]
 
 
+class PlacedMesh:
+    """Load and place an OBJ mesh — pure Python / NumPy, no extra libraries.
+
+    Parses 'v' (vertex) and 'f' (face) lines from the file.
+    Triangles and quads are both handled. Vertex normals and UV lines are
+    ignored. Face indices use the OBJ v/vt/vn notation — only the vertex
+    component is used.
+    """
+
+    def __init__(self, filepath: str = None, scale: float = 1.0,
+                 offset: tuple = (0., 0., 0.)):
+        self.filepath = filepath or _MODEL_PATH
+        self.scale    = scale
+        self.offset   = np.array(offset, dtype=float)
+        self.vertices, self.faces = self._load()
+
+    def _load(self):
+        ext = os.path.splitext(self.filepath)[1].lower()
+        if ext != '.obj':
+            raise ValueError(
+                f"Only OBJ files are supported (got '{ext}'). "
+                "Export your mesh as OBJ from the originating application."
+            )
+        verts, faces = [], []
+        with open(self.filepath) as fh:
+            for line in fh:
+                tok = line.strip().split()
+                if not tok:
+                    continue
+                if tok[0] == 'v':
+                    verts.append([float(tok[1]), float(tok[2]), float(tok[3])])
+                elif tok[0] == 'f':
+                    faces.append([int(p.split('/')[0]) - 1 for p in tok[1:]])
+        return np.array(verts, dtype=np.float64), faces
+
+    def world_vertices(self):
+        """Return scaled + translated vertices as ndarray (N, 3)."""
+        return self.vertices * self.scale + self.offset
+
+
+class PlacedCubeSurface:
+    """Place a CubeSurface geometry model in the AR scene."""
+
+    def __init__(self, cube_size=1.0, grid_n=5, rot_z_deg=45.,
+                 radius=0.1, half_side=0.1, n_segs=40, divided=True, gap=0.01,
+                 offset: tuple = (0., 0., 0.)):
+        self.model  = CubeSurface(cube_size=cube_size, grid_n=grid_n,
+                                  rot_z_deg=rot_z_deg, radius=radius,
+                                  half_side=half_side, n_segs=n_segs,
+                                  divided=divided, gap=gap)
+        self.offset = np.array(offset, dtype=float)
+
+    def world_polygons(self):
+        """Return (disc_polys, square_polys) — lists of ndarray (N, 3) in world space."""
+        discs   = [p + self.offset for p in self.model.disc_polygons()]
+        squares = [p + self.offset for p in self.model.square_polygons()]
+        return discs, squares
+
+
 class Scene:
 
     def __init__(self):
@@ -350,6 +398,25 @@ class Scene:
                   frame: Frame = None, anchor: str = None) -> PlaceTorus:
         shape = PlaceTorus(torus_radius=torus_radius, tube_radius=tube_radius,
                            frame=frame, anchor=anchor)
+        self.shapes.append(shape)
+        return shape
+
+    def add_mesh(self, filepath: str = None, scale: float = 1.0,
+                 offset: tuple = (0., 0., 0.)) -> PlacedMesh:
+        """Place an OBJ mesh in the scene at a fixed world offset."""
+        shape = PlacedMesh(filepath=filepath, scale=scale, offset=offset)
+        self.shapes.append(shape)
+        return shape
+
+    def add_cube_surface(self, cube_size=1.0, grid_n=5, rot_z_deg=45.,
+                         radius=0.1, half_side=0.1, n_segs=40,
+                         divided=True, gap=0.01,
+                         offset: tuple = (0., 0., 0.)) -> PlacedCubeSurface:
+        """Place a CubeSurface geometry model in the scene."""
+        shape = PlacedCubeSurface(cube_size=cube_size, grid_n=grid_n,
+                                  rot_z_deg=rot_z_deg, radius=radius,
+                                  half_side=half_side, n_segs=n_segs,
+                                  divided=divided, gap=gap, offset=offset)
         self.shapes.append(shape)
         return shape
 
@@ -376,24 +443,53 @@ class Renderer:
         t           = self.marker_frame._tvec_ravel
 
         # Collect all projected faces across every shape (global painter sort)
-        all_faces = []  # (depth, pts_int32, use_texture)
+        all_faces = []  # (depth, pts_int32, use_texture, uv_pts)
         for shape in scene.shapes:
-            anchor_marker = all_markers.get(shape.anchor) if shape.anchor else None
+            anchor_name   = getattr(shape, 'anchor', None)
+            anchor_marker = all_markers.get(anchor_name) if anchor_name else None
             if anchor_marker is not None:
                 anchor_offset = anchor_marker.world_point
-            elif shape.anchor and shape.anchor in config.positions:
-                anchor_offset = config.positions[shape.anchor]
+            elif anchor_name and anchor_name in config.positions:
+                anchor_offset = config.positions[anchor_name]
             else:
                 anchor_offset = None
             modifiers   = anchor_marker.modifiers if anchor_marker is not None else []
             use_texture = "heart" in {m.name for m in modifiers} and self._texture is not None
 
-            objects = (shape.compas_tori(anchor_offset=anchor_offset)
-                       if isinstance(shape, PlaceTorus)
-                       else shape.compas_boxes(anchor_offset=anchor_offset))
+            # ── PlacedCubeSurface: project polygons directly ──────────────────
+            if isinstance(shape, PlacedCubeSurface):
+                discs, squares = shape.world_polygons()
+                for poly in discs:
+                    pts2d = self.marker_frame.project(poly)
+                    cam_z = (poly @ R.T + t)[:, 2]
+                    pts_i = pts2d[:, 0, :].astype(np.int32)
+                    all_faces.append((cam_z.mean(), pts_i, False, None, (225, 105, 65)))
+                for poly in squares:
+                    pts2d = self.marker_frame.project(poly)
+                    cam_z = (poly @ R.T + t)[:, 2]
+                    pts_i = pts2d[:, 0, :].astype(np.int32)
+                    all_faces.append((cam_z.mean(), pts_i, False, None, (0, 140, 255)))
+                continue
+
+            # ── PlacedMesh: project vertices directly, no COMPAS ─────────────
+            if isinstance(shape, PlacedMesh):
+                verts_3d = shape.world_vertices()
+                pts2d    = self.marker_frame.project(verts_3d)
+                cam_z    = (verts_3d @ R.T + t)[:, 2]
+                for face_idxs in shape.faces:
+                    depth = cam_z[face_idxs].mean()
+                    pts   = np.array([pts2d[i][0].astype(int) for i in face_idxs],
+                                     dtype=np.int32)
+                    all_faces.append((depth, pts, False, None, None))
+                continue
+
+            if isinstance(shape, PlaceTorus):
+                objects = shape.compas_tori(anchor_offset=anchor_offset)
+            else:
+                objects = shape.compas_boxes(anchor_offset=anchor_offset)
 
             for obj in objects:
-                mesh     = Mesh.from_shape(obj)
+                mesh = obj if isinstance(obj, Mesh) else Mesh.from_shape(obj)
                 vkeys    = list(mesh.vertices())
                 verts_3d = np.array([mesh.vertex_coordinates(v) for v in vkeys], dtype=np.float64)
                 pts2d    = self.marker_frame.project(verts_3d)
@@ -412,25 +508,25 @@ class Renderer:
                         ], dtype=np.float32)
                     else:
                         uv_pts = None
-                    all_faces.append((depth, pts, use_texture, uv_pts))
+                    all_faces.append((depth, pts, use_texture, uv_pts, None))
 
         # Back-to-front sort (painter's algorithm across all shapes)
         all_faces.sort(key=lambda x: -x[0])
 
         # One overlay copy → one addWeighted for all flat-colour fills
         overlay = img.copy()
-        for _, pts, use_tex, _ in all_faces:
+        for _, pts, use_tex, _, face_color in all_faces:
             if not use_tex:
-                cv2.fillPoly(overlay, [pts], color)
+                cv2.fillPoly(overlay, [pts], face_color if face_color is not None else color)
         cv2.addWeighted(overlay, alpha, img, 1.0 - alpha, 0, img)
 
         # Texture fills (written directly into img)
-        for _, pts, use_tex, uv_pts in all_faces:
+        for _, pts, use_tex, uv_pts, _ in all_faces:
             if use_tex:
                 self._apply_texture_face(img, pts, uv_pts)
 
         # Outlines for every face
-        for _, pts, _, _ in all_faces:
+        for _, pts, _, _, _ in all_faces:
             cv2.polylines(img, [pts], True, (0, 0, 0), thickness)
 
     def draw_axes(self, img: np.ndarray):

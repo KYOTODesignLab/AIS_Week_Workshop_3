@@ -109,6 +109,28 @@
       right: 50px;
     }
 
+    #nickname-input {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+      color: rgba(255,255,255,0.85);
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      text-align: center;
+      width: 200px;
+      outline: none;
+      z-index: 40;
+      padding-bottom: 2px;
+    }
+    #nickname-input::placeholder {
+      color: rgba(255,255,255,0.35);
+    }
     #send-btn {
       background: #3182ce;
       bottom: 50px;
@@ -123,6 +145,7 @@
   <div id="crop-guide"></div>
   <div id="title-bar">Mikoshi Visualizer</div>
   <div id="msg-bar"></div>
+  <input id="nickname-input" type="text" placeholder="[ input your nickname ]" autocomplete="off" autocorrect="off" spellcheck="false" />
   <video id="preview" autoplay playsinline muted></video>
   <img   id="snapshot" alt="" />
   <canvas id="canvas"></canvas>
@@ -148,16 +171,59 @@
     sizeCropGuide();
     window.addEventListener('resize', sizeCropGuide);
 
-    const sessionId  = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    let mqttClient   = null;
-    let mqttReady    = false;
-    let stream       = null;
-    let capturedBlob = null;
-    let inStill      = false;
-    const msgBar     = document.getElementById('msg-bar');
-    let msgTimer     = null;
-    let msgQueue     = [];
-    let msgBusy      = false;
+    const sessionId     = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    let mqttClient      = null;
+    let mqttReady       = false;
+    let stream          = null;
+    let capturedBlob    = null;
+    let inStill         = false;
+    const msgBar        = document.getElementById('msg-bar');
+    const nicknameInput = document.getElementById('nickname-input');
+    let msgTimer        = null;
+    let msgQueue        = [];
+    let msgBusy         = false;
+
+    // ── Sensor state ─────────────────────────────────────────────────────────
+    let geoLocation  = null;
+    let deviceOrient = null;
+
+    // Geolocation — request once, keep updating
+    if (navigator.geolocation) {
+      navigator.geolocation.watchPosition(
+        pos => {
+          geoLocation = {
+            latitude:  pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy:  pos.coords.accuracy
+          };
+        },
+        () => {},
+        { enableHighAccuracy: true }
+      );
+    }
+
+    // Device orientation (pitch / yaw)
+    function _startOrientation() {
+      window.addEventListener('deviceorientation', e => {
+        deviceOrient = {
+          alpha: e.alpha != null ? +e.alpha.toFixed(2) : null,  // yaw (compass)
+          beta:  e.beta  != null ? +e.beta.toFixed(2)  : null,  // pitch
+          gamma: e.gamma != null ? +e.gamma.toFixed(2) : null   // roll
+        };
+      }, true);
+    }
+    // iOS 13+ requires a permission request
+    if (typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof DeviceOrientationEvent.requestPermission === 'function') {
+      document.addEventListener('click', function _reqOri() {
+        DeviceOrientationEvent.requestPermission().then(state => {
+          if (state === 'granted') _startOrientation();
+        }).catch(() => {});
+        document.removeEventListener('click', _reqOri);
+      }, { once: true });
+    } else {
+      _startOrientation();
+    }
 
     function showMessage(text) {
       msgQueue.push(text);
@@ -229,10 +295,15 @@
       if (!capturedBlob || !mqttReady) return;
       const reader = new FileReader();
       reader.onload = () => {
-        mqttClient.publish(
-          `ais-workshop/image/${sessionId}`,
-          JSON.stringify({ session_id: sessionId, image: reader.result.split(',')[1], message: '' })
-        );
+        const payload = {
+          session_id:  sessionId,
+          image:       reader.result.split(',')[1],
+          message:     '',
+          nickname:    nicknameInput.value.trim() || 'anonymous',
+          location:    geoLocation,
+          orientation: deviceOrient
+        };
+        mqttClient.publish(`ais-workshop/image/${sessionId}`, JSON.stringify(payload));
         // Return to video
         if (snapshot.src) URL.revokeObjectURL(snapshot.src);
         capturedBlob           = null;

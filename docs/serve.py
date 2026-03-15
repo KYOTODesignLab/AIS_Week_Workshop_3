@@ -75,6 +75,9 @@ def _on_message(client, userdata, msg):
         session_id = payload["session_id"]
         img_data   = base64.b64decode(payload["image"])
         message    = payload.get("message", "")
+        nickname   = payload.get("nickname", "anonymous")
+        location   = payload.get("location")
+        orientation = payload.get("orientation")
         ts         = int(time.time() * 1000)
 
         img_path  = os.path.join(CACHE_DIR, f"{ts}.jpg")
@@ -83,7 +86,14 @@ def _on_message(client, userdata, msg):
         with open(img_path, "wb") as f:
             f.write(img_data)
         with open(json_path, "w") as f:
-            json.dump({"timestamp": ts, "message": message, "session_id": session_id}, f, indent=2)
+            json.dump({
+                "timestamp":   ts,
+                "session_id":  session_id,
+                "message":     message,
+                "nickname":    nickname,
+                "location":    location,
+                "orientation": orientation
+            }, f, indent=2)
 
         results    = model(img_path)
         detections = []

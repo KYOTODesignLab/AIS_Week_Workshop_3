@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=overlays-content" />
   <title>AIS Capture</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,6 +68,23 @@
       transition: opacity 0.4s;
     }
     #msg-bar.visible { opacity: 1; }
+
+    #console-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 4px 10px;
+      background: rgba(0,0,0,0.55);
+      font-family: 'Roboto Mono', 'Courier New', monospace;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.85);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      pointer-events: none;
+      z-index: 50;
+    }
 
     #preview, #snapshot {
       position: fixed;
@@ -145,7 +162,8 @@
   <div id="crop-guide"></div>
   <div id="title-bar">Mikoshi Visualizer</div>
   <div id="msg-bar"></div>
-  <input id="nickname-input" type="text" placeholder="[ input your nickname ]" autocomplete="off" autocorrect="off" spellcheck="false" />
+  <div id="console-bar">ready</div>
+  <input id="nickname-input" type="text" placeholder="[ input your nickname ]" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
   <video id="preview" autoplay playsinline muted></video>
   <img   id="snapshot" alt="" />
   <canvas id="canvas"></canvas>
@@ -182,6 +200,9 @@
     let msgTimer        = null;
     let msgQueue        = [];
     let msgBusy         = false;
+
+    // Dismiss virtual keyboard on Enter or when focus leaves the nickname field
+    nicknameInput.addEventListener('keydown', e => { if (e.key === 'Enter') nicknameInput.blur(); });
 
     // ── Sensor state ─────────────────────────────────────────────────────────
     let geoLocation  = null;
@@ -224,6 +245,26 @@
     } else {
       _startOrientation();
     }
+
+    // ── On-screen console (bottom bar) ───────────────────────────────────────
+    const consoleBar = document.getElementById('console-bar');
+    (function() {
+      const _log   = console.log.bind(console);
+      const _warn  = console.warn.bind(console);
+      const _error = console.error.bind(console);
+      function _show(args) {
+        consoleBar.textContent = args.map(a =>
+          typeof a === 'object' ? JSON.stringify(a) : String(a)
+        ).join(' ');
+      }
+      console.log   = function(...args) { _show(args); _log(...args);   };
+      console.warn  = function(...args) { _show(args); _warn(...args);  };
+      console.error = function(...args) {
+        consoleBar.style.color = 'rgba(255,100,100,0.95)';
+        _show(args); _error(...args);
+        setTimeout(() => { consoleBar.style.color = ''; }, 4000);
+      };
+    })();
 
     function showMessage(text) {
       msgQueue.push(text);

@@ -19,7 +19,7 @@ import qrcode
 from io import BytesIO
 import cv2
 import numpy as np
-from flask import Flask, render_template, request, send_from_directory, jsonify
+from flask import Flask, render_template, render_template_string, request, send_from_directory, jsonify
 from flask_socketio import SocketIO, emit
 from test_with_stream_normal import process_frame
 
@@ -140,6 +140,26 @@ def ensure_ssl_cert(ip: str):
         return None, None
 
 
+def open_local_browser(url: str):
+    """Open the local page with a Windows fallback and always print the manual URL."""
+    try:
+        if webbrowser.open_new_tab(url):
+            print(f"Opened browser at: {url}")
+            return
+    except Exception as exc:
+        print(f"Browser auto-open failed via webbrowser: {exc}")
+
+    if os.name == "nt":
+        try:
+            os.startfile(url)
+            print(f"Opened browser at: {url}")
+            return
+        except OSError as exc:
+            print(f"Browser auto-open failed via os.startfile: {exc}")
+
+    print(f"Open this URL manually: {url}")
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -163,6 +183,74 @@ def index():
 @app.route("/camera")
 def camera_page():
     return render_template("camera_pc.html", server_url=SERVER_URL)
+
+
+@app.route("/ping")
+def ping():
+        return jsonify({
+                "ok": True,
+                "server_url": SERVER_URL,
+                "remote_addr": request.remote_addr,
+                "user_agent": request.headers.get("User-Agent", ""),
+        })
+
+
+@app.route("/debug/client")
+def debug_client():
+        return render_template_string(
+                """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client Debug</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+            background: #111;
+            color: #eee;
+        }
+        h1 { margin-bottom: 12px; }
+        code, pre {
+            background: #1d1d1d;
+            color: #9fe870;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .row { margin: 10px 0; }
+        .bad { color: #ff7b72; }
+        .good { color: #7ee787; }
+        a { color: #79c0ff; }
+    </style>
+</head>
+<body>
+    <h1>Client Debug</h1>
+    <div class="row">Server URL: <code>{{ server_url }}</code></div>
+    <div class="row">Path: <code>/debug/client</code></div>
+    <div class="row">If this page loads, basic HTTPS/network access is working.</div>
+    <div class="row">Next test: <a href="/camera">Open /camera</a></div>
+    <div class="row" id="protocol"></div>
+    <div class="row" id="secure"></div>
+    <div class="row" id="media"></div>
+    <div class="row" id="ua"></div>
+    <script>
+        const protocol = location.protocol;
+        const secureContext = window.isSecureContext;
+        const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+        document.getElementById('protocol').innerHTML = 'Protocol: <code>' + protocol + '</code>';
+        document.getElementById('secure').innerHTML = 'Secure context: <span class="' + (secureContext ? 'good' : 'bad') + '">' + secureContext + '</span>';
+        document.getElementById('media').innerHTML = 'Camera API available: <span class="' + (hasMediaDevices ? 'good' : 'bad') + '">' + hasMediaDevices + '</span>';
+        document.getElementById('ua').innerHTML = 'User agent:<br><pre>' + navigator.userAgent + '</pre>';
+    </script>
+</body>
+</html>
+""",
+                server_url=SERVER_URL,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -224,10 +312,12 @@ if __name__ == "__main__":
 
     scheme = "https" if use_ssl else "http"
     SERVER_URL = f"{scheme}://{ip}:{PORT}"
+    local_url = f"{scheme}://127.0.0.1:{PORT}"
 
     print(f"\n{'=' * 55}")
     print(f"  Mode:        PC-side YOLO inference")
     print(f"  Server URL:  {SERVER_URL}")
+    print(f"  Local URL:   {local_url}")
     print(f"  Camera page: {SERVER_URL}/camera")
     if use_ssl:
         print()
@@ -244,8 +334,7 @@ if __name__ == "__main__":
     qr_terminal.print_ascii(invert=True)
     print()
 
-    _local_url = f"{'https' if use_ssl else 'http'}://127.0.0.1:{PORT}"
-    threading.Timer(3.0, lambda: webbrowser.open(_local_url)).start()
+    threading.Timer(1.5, lambda: open_local_browser(local_url)).start()
 
     kwargs = dict(host="0.0.0.0", port=PORT, debug=False, use_reloader=False,
                   allow_unsafe_werkzeug=True)

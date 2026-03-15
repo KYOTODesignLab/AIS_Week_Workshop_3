@@ -1,9 +1,16 @@
+html {
+  background: #0d0d0d;
+  min-height: 100%;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: #0d0d0d;
   color: #e8e8e8;
   font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  min-height: 100svh;
   height: 100vh;
   overflow: hidden;
   display: flex;

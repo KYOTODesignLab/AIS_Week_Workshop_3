@@ -3,7 +3,7 @@ import os
 import cv2
 import numpy as np
 
-from interpreter import MarkerConfig, MarkerDetector, BaseFrame, Scene, Renderer, Placed3dmMesh
+from interpreter import MarkerConfig, MarkerDetector, BaseFrame, Scene, Renderer
 
 # ── Load model ────────────────────────────────────────────────────────────────
 
@@ -23,6 +23,10 @@ config = MarkerConfig(
     modifier_labels=["many, big"],
 )
 
+#__________________________ designate mesh file for 3D model __________________________
+mesh_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "elements", "models", "20260315_AIS_Roof_Lowpoly.obj")
+
+
 model    = YOLO(_path)
 detector = MarkerDetector(model, config)
 
@@ -33,12 +37,13 @@ detector = MarkerDetector(model, config)
 
 def build_scene() -> Scene:
     scene = Scene()
-    scene.add_box(size=0.3)   # unit cube centred on the whole marker sheet
-    # scene.add_torus(anchor="smile", torus_radius=0.3, tube_radius=0.1)  # torus above the smile marker
-    # scene.add_3dm_mesh(scale=0.5, anchor="o")   # mesh model placed above the origin marker (needs AIS26_03_mesh.obj in elements/models/)
+    scene.add_mesh(filepath=mesh_file, scale=1.0, offset=(0.5, 0.5, 0.))
+    scene.add_cube_surface(cube_size=1.0, offset=(0.5, 0.5,0.0))
+    # scene.add_box(size=0.3)
     return scene
 
 SCENE = build_scene()
+SCENE_ALPHA = 0.45   # 0.0 = fully transparent  ·  1.0 = fully opaque
 
 # ── Core processing function ──────────────────────────────────────────────────
 
@@ -67,7 +72,7 @@ def process_frame(frame: np.ndarray) -> np.ndarray:
     renderer = Renderer(plane)
     renderer.draw_marker_dots(annotated)
     renderer.draw_axes(annotated)
-    renderer.draw_scene(annotated, SCENE)
+    renderer.draw_scene(annotated, SCENE, alpha=SCENE_ALPHA)
     renderer.draw_missing_warning(annotated)
 
     return annotated

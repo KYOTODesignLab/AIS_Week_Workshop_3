@@ -10,7 +10,7 @@ path = os.path.join(os.path.dirname(__file__), "models", "AIS26ws3_yolov8n_3.pt"
 model = YOLO(path)
 
 # Test on custom images randomly selected from folder
-folder = os.path.join(os.path.dirname(__file__), "LabelImg", "marker_images", "test")
+folder = os.path.join(os.path.dirname(__file__), "LabelImg", "marker_images", "resized")
 
 
 

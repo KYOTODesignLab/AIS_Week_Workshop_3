@@ -130,17 +130,18 @@
       position: fixed;
       top: 72px;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translateX(-50%) scale(0.8);
+      transform-origin: center top;
       background: transparent;
       border: none;
       border-bottom: 1px solid rgba(255,255,255,0.3);
       color: rgba(255,255,255,0.85);
       font-family: 'Roboto', sans-serif;
       font-weight: 300;
-      font-size: 0.8rem;
+      font-size: 16px; /* must be ≥16px to prevent iOS Safari auto-zoom */
       letter-spacing: 0.06em;
       text-align: center;
-      width: 200px;
+      width: 250px; /* wider to compensate for scale(0.8) → visually ~200px */
       outline: none;
       z-index: 40;
       padding-bottom: 2px;
@@ -179,15 +180,26 @@
     const sendBtn    = document.getElementById('send-btn');
     const cropGuide  = document.getElementById('crop-guide');
 
+    // When the body is CSS-counter-rotated in landscape, fixed children use the
+    // body as containing block (width=100vh, height=100vw). We must swap the
+    // viewport dimensions here so the crop guide ends up in the right place.
     function sizeCropGuide() {
-      const side = Math.min(window.innerWidth, window.innerHeight);
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const vw = isLandscape ? window.innerHeight : window.innerWidth;
+      const vh = isLandscape ? window.innerWidth  : window.innerHeight;
+      const side = Math.min(vw, vh);
       cropGuide.style.width  = side + 'px';
       cropGuide.style.height = side + 'px';
-      cropGuide.style.left   = ((window.innerWidth  - side) / 2) + 'px';
-      cropGuide.style.top    = ((window.innerHeight - side) / 2) + 'px';
+      cropGuide.style.left   = ((vw - side) / 2) + 'px';
+      cropGuide.style.top    = ((vh - side) / 2) + 'px';
     }
     sizeCropGuide();
     window.addEventListener('resize', sizeCropGuide);
+
+    // Lock to portrait where supported (installed PWA / fullscreen on Android)
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('portrait').catch(() => {});
+    }
 
     const sessionId     = Math.random().toString(36).slice(2) + Date.now().toString(36);
     let mqttClient      = null;
@@ -197,9 +209,7 @@
     let inStill         = false;
     const msgBar        = document.getElementById('msg-bar');
     const nicknameInput = document.getElementById('nickname-input');
-    let msgTimer        = null;
-    let msgQueue        = [];
-    let msgBusy         = false;
+    let msgTimer = null;
 
     // Dismiss virtual keyboard on Enter or when focus leaves the nickname field
     nicknameInput.addEventListener('keydown', e => { if (e.key === 'Enter') nicknameInput.blur(); });
@@ -266,22 +276,13 @@
       };
     })();
 
+    // Show message immediately, replacing whatever is currently visible.
+    // Resets the hide-timer so the message stays for 3 s from the latest call.
     function showMessage(text) {
-      msgQueue.push(text);
-      if (!msgBusy) _flushMessage();
-    }
-
-    function _flushMessage() {
-      if (msgQueue.length === 0) { msgBusy = false; return; }
-      msgBusy = true;
-      const text = msgQueue.shift();
+      clearTimeout(msgTimer);
       msgBar.textContent = text;
       msgBar.classList.add('visible');
-      clearTimeout(msgTimer);
-      msgTimer = setTimeout(() => {
-        msgBar.classList.remove('visible');
-        setTimeout(_flushMessage, 300); // wait for fade-out before next
-      }, 5000);
+      msgTimer = setTimeout(() => msgBar.classList.remove('visible'), 3000);
     }
 
     // ── Camera ────────────────────────────────────────────────────────────────

@@ -225,6 +225,28 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
             print(f"IG media creation failed: {create_res.json()}")
             _pub_status("public is inaccessible")
             return
+
+        # Poll until container status is FINISHED (Instagram needs time to process)
+        for attempt in range(12):
+            time.sleep(5)
+            status_res = requests.get(
+                f"{IG_API}/{creation_id}",
+                params={"fields": "status_code", "access_token": IG_TOKEN},
+                timeout=10,
+            )
+            status_code = status_res.json().get("status_code", "")
+            print(f"IG container status: {status_code} (attempt {attempt + 1})")
+            if status_code == "FINISHED":
+                break
+            if status_code == "ERROR":
+                print(f"IG container error: {status_res.json()}")
+                _pub_status("public is inaccessible")
+                return
+        else:
+            print("IG container did not become ready in time")
+            _pub_status("public is inaccessible")
+            return
+
         pub_res = requests.post(
             f"{IG_API}/{IG_USER_ID}/media_publish",
             params={"creation_id": creation_id, "access_token": IG_TOKEN},

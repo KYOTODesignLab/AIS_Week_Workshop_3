@@ -281,20 +281,25 @@
       msgTimer = setTimeout(() => {
         msgBar.classList.remove('visible');
         setTimeout(_flushMessage, 300); // wait for fade-out before next
-      }, 3000);
+      }, 5000);
     }
 
     // ── Camera ────────────────────────────────────────────────────────────────
 
     async function startCamera() {
+      showMessage('starting camera…');
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { width: { ideal: 4096 }, height: { ideal: 2160 }, facingMode: { ideal: 'environment' } },
           audio: false
         });
         preview.srcObject = stream;
+        const track = stream.getVideoTracks()[0];
+        const s = track?.getSettings() ?? {};
+        showMessage(`camera ready  ${s.width ?? '?'}×${s.height ?? '?'}`);
       } catch (err) {
         console.error('Camera error:', err);
+        showMessage('camera error — check permissions');
       }
     }
 
@@ -310,8 +315,10 @@
         preview.style.display  = '';
         sendBtn.style.display  = 'none';
         inStill = false;
+        showMessage('retake — ready to capture');
       } else {
         // Take stillshot
+        showMessage('capturing…');
         const track    = stream?.getVideoTracks()[0];
         const settings = track?.getSettings() ?? {};
         const w = settings.width  || preview.videoWidth;
@@ -326,6 +333,7 @@
           preview.style.display  = 'none';
           sendBtn.style.display  = 'block';
           inStill = true;
+          showMessage(`captured  ${w}×${h}  (${Math.round(blob.size/1024)} KB)  — tap send`);
         }, 'image/jpeg', 0.95);
       }
     });
@@ -335,12 +343,15 @@
     const CHUNK_SIZE = 180 * 1024;   // 180 KB base64 per chunk → safely under 256 KB MQTT limit
 
     sendBtn.addEventListener('click', () => {
-      if (!capturedBlob || !mqttReady) return;
+      if (!mqttReady) { showMessage('not connected — retrying…'); return; }
+      if (!capturedBlob) return;
+      showMessage('encoding image…');
       const reader = new FileReader();
       reader.onload = () => {
         const b64   = reader.result.split(',')[1];
         const total = Math.ceil(b64.length / CHUNK_SIZE);
         console.log(`Sending image: ~${Math.round(b64.length / 1024)} KB in ${total} chunk(s)`);
+        showMessage(`sending ${total} chunk${total > 1 ? 's' : ''}  (~${Math.round(b64.length/1024)} KB)…`);
         const meta = {
           message:     '',
           nickname:    nicknameInput.value.trim() || 'anonymous',
@@ -353,6 +364,7 @@
           if (i === 0) Object.assign(pkt, meta);   // metadata only in first chunk
           mqttClient.publish(`ais-workshop/chunk/${sessionId}`, JSON.stringify(pkt));
         }
+        showMessage(`all ${total} chunk${total > 1 ? 's' : ''} sent  — waiting for server…`);
         // Return to video
         if (snapshot.src) URL.revokeObjectURL(snapshot.src);
         capturedBlob           = null;
@@ -376,13 +388,16 @@
       mqttClient.on('connect', () => {
         mqttReady = true;
         mqttClient.subscribe(`ais-workshop/result/${sessionId}`);
+        showMessage('connected to server');
       });
-      mqttClient.on('error',     () => { mqttReady = false; });
-      mqttClient.on('reconnect', () => { mqttReady = false; });
+      mqttClient.on('error',     (e) => { mqttReady = false; showMessage('connection error — retrying…'); console.error('MQTT error', e); });
+      mqttClient.on('reconnect', ()  => { mqttReady = false; showMessage('reconnecting…'); });
+      mqttClient.on('close',     ()  => { mqttReady = false; });
       mqttClient.on('message', (_topic, payload) => {
         try {
           const data = JSON.parse(payload.toString());
-          if (data.status) showMessage(data.status);
+          if (data.status)     showMessage(data.status);
+          if (data.detections) showMessage(`${data.detections.length} detection${data.detections.length !== 1 ? 's' : ''} found`);
           // Always send ack back so server can proceed to next step
           mqttClient.publish(`ais-workshop/ack/${sessionId}`, '1');
         } catch {}

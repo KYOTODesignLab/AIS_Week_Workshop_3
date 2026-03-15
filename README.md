@@ -44,6 +44,8 @@ Open your repository folder (`GitHub/AIS_Week_Workshop_3'), and create the neces
 conda env create -f environment.yml
 ```
 
+This environment uses Python 3.11 because the current `ultralytics` and `torch` builds used in this workshop are not reliably available for Python 3.14.
+
 To update the environment with conda, navigate to your repository root folder, and input the following line to the terminal:
 
 ```
@@ -56,18 +58,23 @@ Then activate the environmet:
 conda activate AIS26
 ```
 
-IF THERE IS APROBLEM WITH PIP AND ULTRALYTICS:
+If you already created a broken `AIS26` environment from an older `environment.yml`, remove it and recreate it:
 
-if you have Nvidia graphic card, you can use CUDA machine learning. Install the CUDA driver: https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_local
-
-Try to update the conda env:
 ```
-conda env update -f environment.yml
+conda env remove -n AIS26
+conda env create -f environment.yml
 ```
 
-If it doesn't work or if you don't have an Nvidia graphic card, install ultralitys into the AIS26 env manually with PIP
+If there is still a problem with `pip` and `ultralytics`, update `pip` inside the environment and install `ultralytics` again:
 
 ```
 conda activate AIS26
-pip install ultralytics
+python -m pip install --upgrade pip
+python -m pip install ultralytics
 ```
+
+If you have an Nvidia graphics card and want CUDA acceleration, install the CUDA driver first: https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_local
+
+Then install the matching PyTorch command from the official selector: https://pytorch.org/get-started/locally/
+
+Do not keep hard-coded packages such as `torch==2.10.0+cu130` in `environment.yml`, because the correct Torch build depends on both your Python version and your CUDA version.

@@ -23,8 +23,8 @@ from compas.geometry import Frame, Point, Vector
 
 CUBE_SIZE  = 1.0   # world units
 GRID_N     = 5     # nodes per edge  (5 × 5 per face)
-RADIUS     = 0.07  # circular-disc radius
-HALF_SIDE  = 0.07  # square half-side
+RADIUS     = 0.1  # circular-disc radius
+HALF_SIDE  = 0.1  # square half-side
 N_SEGS     = 40    # polygon segments for the disc
 
 

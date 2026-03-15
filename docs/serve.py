@@ -210,18 +210,26 @@ def _process_image(client, session_id, ts, img_path, json_path,
         with open(json_path, "w") as f:
             json.dump(meta, f, indent=2)
 
-        # Build a human-readable caption (Instagram max is 2 200 chars)
-        det_lines = "\n".join(
-            f"  {d['label']} ({d['confidence']:.0%})" for d in detections
-        ) or "  (none)"
-        caption_parts = ["#AISworkshop #multidimensionvision"]
-        if nickname and nickname != "anonymous":
-            caption_parts.append(f"by {nickname}")
-        if message:
-            caption_parts.append(message)
-        caption_parts.append(f"Detections:\n{det_lines}")
-        caption = "\n".join(caption_parts)[:2200]   # hard-truncate to IG limit
-        print(f"Session {session_id}: {len(detections)} detections")
+        # Build caption: full JSON, trimming excess detections if > 2000 chars
+        IG_LIMIT = 2200
+        TRIM_AT  = 2000
+
+        def _make_caption(dets):
+            payload = dict(meta)
+            payload["detections"] = dets
+            return json.dumps(payload, separators=(",", ":"))
+
+        caption = _make_caption(detections)
+        if len(caption) > TRIM_AT:
+            # Binary-search for how many detections fit
+            kept = detections[:]
+            while kept and len(_make_caption(kept)) > TRIM_AT:
+                kept.pop()
+            trimmed = len(detections) - len(kept)
+            caption = _make_caption(kept)[:-1]  # strip closing }
+            caption += f',"excess_recognitions":{trimmed}}}'
+        caption = caption[:IG_LIMIT]   # hard safety cap
+        print(f"Session {session_id}: {len(detections)} detections, caption {len(caption)} chars")
 
         # ─ Step 2: publish detections, wait for ack before Instagram ───
         client.publish(

@@ -53,10 +53,15 @@ MQTT_BROKER    = "broker.hivemq.com"
 MQTT_PORT      = 1883
 MQTT_TOPIC_IMG = "ais-workshop/image"
 MQTT_TOPIC_RES = "ais-workshop/result"
+MQTT_TOPIC_ACK = "ais-workshop/ack"
 
 IG_API = "https://graph.facebook.com/v19.0"
 
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+# ── Handshake state ───────────────────────────────────────────────────────────────
+ACK_TIMEOUT = 10  # seconds to wait for client ack before proceeding anyway
+_pending_acks: dict[str, threading.Event] = {}
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
@@ -67,33 +72,71 @@ model = YOLO(MODEL_PATH)
 def _on_connect(client, userdata, flags, rc):
     print(f"MQTT connected (rc={rc})")
     client.subscribe(f"{MQTT_TOPIC_IMG}/+")
+    client.subscribe(f"{MQTT_TOPIC_ACK}/+")
+
+
+def _wait_ack(session_id):
+    """Block until client sends ack or timeout expires."""
+    evt = threading.Event()
+    _pending_acks[session_id] = evt
+    evt.wait(timeout=ACK_TIMEOUT)
+    _pending_acks.pop(session_id, None)
 
 
 def _on_message(client, userdata, msg):
+    # ─ Handle ack messages ──────────────────────────────────────────
+    if msg.topic.startswith(f"{MQTT_TOPIC_ACK}/"):
+        session_id = msg.topic.split("/")[-1]
+        if session_id in _pending_acks:
+            _pending_acks[session_id].set()
+        return
+
+    # ─ Handle incoming image ─────────────────────────────────────────
     try:
-        payload    = json.loads(msg.payload.decode())
-        session_id = payload["session_id"]
-        img_data   = base64.b64decode(payload["image"])
-        message    = payload.get("message", "")
-        nickname   = payload.get("nickname", "anonymous")
-        location   = payload.get("location")
+        payload     = json.loads(msg.payload.decode())
+        session_id  = payload["session_id"]
+        img_data    = base64.b64decode(payload["image"])
+        message     = payload.get("message", "")
+        nickname    = payload.get("nickname", "anonymous")
+        location    = payload.get("location")
         orientation = payload.get("orientation")
-        ts         = int(time.time() * 1000)
+        ts          = int(time.time() * 1000)
 
         img_path  = os.path.join(CACHE_DIR, f"{ts}.jpg")
         json_path = os.path.join(CACHE_DIR, f"{ts}.json")
 
         with open(img_path, "wb") as f:
             f.write(img_data)
-        with open(json_path, "w") as f:
-            json.dump({
-                "timestamp":   ts,
-                "session_id":  session_id,
-                "message":     message,
-                "nickname":    nickname,
-                "location":    location,
-                "orientation": orientation
-            }, f, indent=2)
+
+        # ─ Immediately acknowledge receipt on its own thread ────────────────
+        client.publish(
+            f"{MQTT_TOPIC_RES}/{session_id}",
+            json.dumps({"status": "vision received"})
+        )
+
+        # ─ Spin off worker so MQTT loop is never blocked ─────────────────
+        threading.Thread(
+            target=_process_image,
+            args=(client, session_id, ts, img_path, json_path,
+                  message, nickname, location, orientation),
+            daemon=True
+        ).start()
+
+    except Exception as e:
+        print(f"MQTT message error: {e}")
+
+
+def _process_image(client, session_id, ts, img_path, json_path,
+                   message, nickname, location, orientation):
+    def _pub(status):
+        client.publish(
+            f"{MQTT_TOPIC_RES}/{session_id}",
+            json.dumps({"status": status})
+        )
+
+    try:
+        # ─ Step 1: wait for client ack before running inference ─────────
+        _wait_ack(session_id)
 
         results    = model(img_path)
         detections = []
@@ -108,20 +151,35 @@ def _on_message(client, userdata, msg):
                     "box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
                 })
 
+        meta = {
+            "timestamp":   ts,
+            "session_id":  session_id,
+            "message":     message,
+            "nickname":    nickname,
+            "location":    location,
+            "orientation": orientation,
+            "detections":  detections
+        }
+        with open(json_path, "w") as f:
+            json.dump(meta, f, indent=2)
+
+        caption = json.dumps(meta, separators=(",", ":"))
+        print(f"Session {session_id}: {len(detections)} detections")
+
+        # ─ Step 2: publish detections, wait for ack before Instagram ───
         client.publish(
             f"{MQTT_TOPIC_RES}/{session_id}",
-            json.dumps({"timestamp": ts, "detections": detections, "status": "vision received"})
+            json.dumps({"detections": detections})
         )
-        print(f"Session {session_id}: {len(detections)} detections published")
 
-        # Auto-post to Instagram if credentials are configured
         if IG_USER_ID and IG_TOKEN and CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET:
-            _post_to_instagram(client, session_id, ts, message)
+            _wait_ack(session_id)
+            _post_to_instagram(client, session_id, ts, caption)
         elif IG_USER_ID or IG_TOKEN:
             print("Instagram credentials incomplete — skipping auto-post")
 
     except Exception as e:
-        print(f"MQTT message error: {e}")
+        print(f"Processing error: {e}")
 
 
 def _post_to_instagram(mqtt_client, session_id, ts, caption):

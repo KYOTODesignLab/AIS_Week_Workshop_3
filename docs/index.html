@@ -334,6 +334,8 @@
         try {
           const data = JSON.parse(payload.toString());
           if (data.status) showMessage(data.status);
+          // Always send ack back so server can proceed to next step
+          mqttClient.publish(`ais-workshop/ack/${sessionId}`, '1');
         } catch {}
       });
     }

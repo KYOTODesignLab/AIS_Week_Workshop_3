@@ -1,0 +1,16 @@
+{
+  "timestamp": 1773537665079,
+  "session_id": "dzrf29y3c8ammr2icg4",
+  "message": "",
+  "nickname": "gergo",
+  "location": {
+    "latitude": 35.04932490794715,
+    "longitude": 135.78309409542192,
+    "accuracy": 5.404375843312501
+  },
+  "orientation": {
+    "alpha": 353.99,
+    "beta": 65.43,
+    "gamma": 6.68
+  }
+}

@@ -3,36 +3,39 @@ import os
 import cv2
 import numpy as np
 
-from interpreter import MarkerConfig, MarkerDetector, BaseFrame, Scene, Renderer
+from interpreter import MarkerConfig, MarkerDetector, BaseFrame, Scene, Renderer, Placed3dmMesh
 
 # ── Load model ────────────────────────────────────────────────────────────────
 
 _path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "00_Marker_Training",
                      "models", "AIS26ws3_yolov8n_3.pt")
 # ── Marker configuration ──────────────────────────────────────────────────────
-# Change origin_label / x_label / ambiguous_label to match your YOLO class names.
-# Change dist to match the physical spacing between adjacent markers.
+# Set origin_label / x_label / y_label / corner_label to match your YOLO class names.
+# dist is the physical spacing between adjacent markers.
 
 config = MarkerConfig(
-    origin_label="o",
-    x_label="x",
-    ambiguous_label="tri",
+    origin_label="zinzya",
+    x_label="take",
+    y_label="yama",
+    corner_label="kamogawa",
     dist=1.0,
-    geometry_labels=["smile"],
-    modifier_labels=["heart"],
+    geometry_labels=["sunlight, river, mountain"],
+    modifier_labels=["many, big"],
 )
 
 model    = YOLO(_path)
 detector = MarkerDetector(model, config)
 
 # ── Scene definition (edit here to change what appears above the markers) ─────
+# All 4 base markers (o, x, tri_o, tri_x) must be visible to define the frame.
 # Use anchor= to position a shape relative to a specific marker.
 # e.g. scene.add_box(size=0.5, anchor="o")  →  box sits above the origin marker
 
 def build_scene() -> Scene:
     scene = Scene()
     scene.add_box(size=0.3)   # unit cube centred on the whole marker sheet
-    scene.add_torus(anchor="smile", torus_radius= 0.3, tube_radius=0.1)  # torus above the smile marker
+    # scene.add_torus(anchor="smile", torus_radius=0.3, tube_radius=0.1)  # torus above the smile marker
+    # scene.add_3dm_mesh(scale=0.5, anchor="o")   # mesh model placed above the origin marker (needs AIS26_03_mesh.obj in elements/models/)
     return scene
 
 SCENE = build_scene()

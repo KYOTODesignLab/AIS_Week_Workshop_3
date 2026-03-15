@@ -1,0 +1,118 @@
+{
+  "timestamp": 1773538931911,
+  "session_id": "p7xf54q5tlmmr37mpt",
+  "message": "",
+  "nickname": "gergo",
+  "location": {
+    "latitude": 35.04941950624372,
+    "longitude": 135.7831006098437,
+    "accuracy": 11.784392768306173
+  },
+  "orientation": {
+    "alpha": 346.59,
+    "beta": 46.2,
+    "gamma": 8.25
+  },
+  "detections": [
+    {
+      "label": "o",
+      "confidence": 0.905,
+      "box": {
+        "x1": 880,
+        "y1": 2540,
+        "x2": 1192,
+        "y2": 2813
+      }
+    },
+    {
+      "label": "tri",
+      "confidence": 0.899,
+      "box": {
+        "x1": 0,
+        "y1": 2377,
+        "x2": 356,
+        "y2": 2881
+      }
+    },
+    {
+      "label": "tri",
+      "confidence": 0.891,
+      "box": {
+        "x1": 274,
+        "y1": 1841,
+        "x2": 465,
+        "y2": 2021
+      }
+    },
+    {
+      "label": "tri",
+      "confidence": 0.684,
+      "box": {
+        "x1": 763,
+        "y1": 0,
+        "x2": 1129,
+        "y2": 110
+      }
+    },
+    {
+      "label": "x",
+      "confidence": 0.588,
+      "box": {
+        "x1": 1035,
+        "y1": 1877,
+        "x2": 1182,
+        "y2": 1994
+      }
+    },
+    {
+      "label": "x",
+      "confidence": 0.547,
+      "box": {
+        "x1": 0,
+        "y1": 1,
+        "x2": 743,
+        "y2": 244
+      }
+    },
+    {
+      "label": "o",
+      "confidence": 0.388,
+      "box": {
+        "x1": 769,
+        "y1": 1517,
+        "x2": 1040,
+        "y2": 1739
+      }
+    },
+    {
+      "label": "smile",
+      "confidence": 0.271,
+      "box": {
+        "x1": 519,
+        "y1": 2025,
+        "x2": 774,
+        "y2": 2241
+      }
+    },
+    {
+      "label": "x",
+      "confidence": 0.268,
+      "box": {
+        "x1": 372,
+        "y1": 1,
+        "x2": 802,
+        "y2": 279
+      }
+    },
+    {
+      "label": "tri",
+      "confidence": 0.25,
+      "box": {
+        "x1": 1363,
+        "y1": 311,
+        "x2": 1746,
+        "y2": 560
+      }
+    }
+  ]
+}

@@ -6,6 +6,8 @@ from compas.geometry import Box, Frame, Point, Torus, Vector
 
 _TEXTURE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "elements", "textures", "leopard_texture.jpg")
+_MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "elements", "models", "AIS26_03_mesh.obj")
 
 # -- Configuration -----------------------------------------------------------
 
@@ -13,27 +15,24 @@ class MarkerConfig:
     """YOLO label names and physical spacing for the 4-marker layout."""
 
     def __init__(self, origin_label="o", x_label="x",
-                 ambiguous_label="tri", dist=1.0,
+                 y_label="tri_o", corner_label="tri_x", dist=1.0,
                  geometry_labels=None, modifier_labels=None):
-        self.origin_label    = origin_label
-        self.x_label         = x_label
-        self.ambiguous_label = ambiguous_label
-        self.dist            = dist
-
-        # Stable internal names for the two disambiguated markers
-        self.y_role      = f"{ambiguous_label}_{origin_label}"   # e.g. "tri_o"
-        self.corner_role = f"{ambiguous_label}_{x_label}"        # e.g. "tri_x"
+        self.origin_label = origin_label
+        self.x_label      = x_label
+        self.y_label      = y_label
+        self.corner_label = corner_label
+        self.dist         = dist
 
         # Abstract 3-D positions in the local marker coordinate system
         self.positions = {
-            origin_label:     Point(0,    0,    0),
-            x_label:          Point(dist, 0,    0),
-            self.y_role:      Point(0,    dist, 0),
-            self.corner_role: Point(dist, dist, 0),
+            origin_label: Point(0,    0,    0),
+            x_label:      Point(dist, 0,    0),
+            y_label:      Point(0,    dist, 0),
+            corner_label: Point(dist, dist, 0),
         }
 
         # Base markers define the coordinate frame (solvePnP uses these)
-        self.base_roles = [origin_label, x_label, self.y_role, self.corner_role]
+        self.base_roles = [origin_label, x_label, y_label, corner_label]
         self.all_roles  = self.base_roles
 
         # Geometry markers: each detected instance places a shape in the scene
@@ -85,10 +84,10 @@ class MarkerDetector:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # computed once for all boxes
 
         named = {}   # role → Marker
-        tris  = []   # (cx, cy, confidence, size) for the ambiguous label
 
-        geo_set = set(cfg.geometry_labels)
-        mod_set = set(cfg.modifier_labels)
+        geo_set  = set(cfg.geometry_labels)
+        mod_set  = set(cfg.modifier_labels)
+        base_set = set(cfg.base_roles)
 
         for box, cls, conf in zip(self._last_results.boxes.xyxy,
                                    self._last_results.boxes.cls,
@@ -103,26 +102,12 @@ class MarkerDetector:
             if not valid:
                 continue
 
-            if name == cfg.ambiguous_label:
-                tris.append((cx, cy, c, size))
+            if name in base_set:
+                named[name] = Marker(name, c, (cx, cy), size, role_type="base")
             elif name in geo_set:
                 named[name] = Marker(name, c, (cx, cy), size, role_type="geometry")
             elif name in mod_set:
                 named[name] = Marker(name, c, (cx, cy), size, role_type="modifier")
-            else:
-                named[name] = Marker(name, c, (cx, cy), size, role_type="base")
-
-        # Disambiguate: smaller projection onto o->x axis => y_role
-        if tris and cfg.origin_label in named and cfg.x_label in named:
-            o_pt = np.array(named[cfg.origin_label].image_point, dtype=np.float64)
-            x_pt = np.array(named[cfg.x_label].image_point,      dtype=np.float64)
-            axis = x_pt - o_pt
-            len2 = float(axis @ axis)
-            if len2 > 0:
-                def score(t): return float((np.array(t[:2]) - o_pt) @ axis) / len2
-                for role, tri in zip([cfg.y_role, cfg.corner_role],
-                                     sorted(tris, key=score)):
-                    named[role] = Marker(role, tri[2], (tri[0], tri[1]), tri[3], role_type="base")
 
         return list(named.values())
 
@@ -188,8 +173,8 @@ class BaseFrame:
 
     def _solve(self):
         cfg       = self.config
-        available = [k for k in cfg.all_roles if k in self._by_name]
-        if len(available) < 3:
+        available = [k for k in cfg.base_roles if k in self._by_name]
+        if len(available) < 4:  # all 4 base markers required
             return
 
         obj_pts = np.array(
@@ -333,6 +318,59 @@ class PlaceTorus:
         return [Torus(self.torus_radius, self.tube_radius, frame=f)]
 
 
+class Placed3dmMesh:
+    """Load a mesh file and place it in the scene via COMPAS.
+    Supports OBJ, OFF, PLY, STL — no extra dependencies needed.
+    To use your .3dm file: open it in Rhino, File -> Export Selected -> OBJ,
+    save as AIS26_03_mesh.obj into elements/models/.
+    """
+
+    def __init__(self, filepath: str = None, scale: float = 1.0,
+                 frame: Frame = None, anchor: str = None):
+        self.filepath = filepath or _MODEL_PATH
+        self.scale    = scale
+        self.frame    = frame or Frame(Point(0, 0, 0), Vector(1, 0, 0), Vector(0, 1, 0))
+        self.anchor   = anchor
+        self._meshes  = self._load()
+
+    def _load(self) -> list:
+        """Read the mesh file and return a list of COMPAS Meshes."""
+        ext = os.path.splitext(self.filepath)[1].lower()
+        if ext == ".obj":
+            return [Mesh.from_obj(self.filepath)]
+        elif ext == ".off":
+            return [Mesh.from_off(self.filepath)]
+        elif ext == ".ply":
+            return [Mesh.from_ply(self.filepath)]
+        elif ext in (".stl", ".stla", ".stlb"):
+            return [Mesh.from_stl(self.filepath)]
+        else:
+            raise ValueError(
+                f"Unsupported mesh format '{ext}'. "
+                "Export your .3dm from Rhino as OBJ (File -> Export Selected -> OBJ) "
+                "and point filepath to the .obj file."
+            )
+    def compas_meshes(self, anchor_offset: Point = None) -> list:
+        """Return COMPAS Mesh objects transformed by frame, scale, and anchor offset."""
+        dx = (anchor_offset.x if anchor_offset else 0.0) + self.frame.point.x
+        dy = (anchor_offset.y if anchor_offset else 0.0) + self.frame.point.y
+        dz = (anchor_offset.z if anchor_offset else 0.0) + self.frame.point.z
+        result = []
+        for src in self._meshes:
+            verts    = []
+            vkey_idx = {}
+            for i, vk in enumerate(src.vertices()):
+                x, y, z = src.vertex_coordinates(vk)
+                verts.append([dx + x * self.scale,
+                               dy + y * self.scale,
+                               dz + z * self.scale])
+                vkey_idx[vk] = i
+            faces = [[vkey_idx[vk] for vk in src.face_vertices(fk)]
+                     for fk in src.faces()]
+            result.append(Mesh.from_vertices_and_faces(verts, faces))
+        return result
+
+
 class Scene:
 
     def __init__(self):
@@ -350,6 +388,14 @@ class Scene:
                   frame: Frame = None, anchor: str = None) -> PlaceTorus:
         shape = PlaceTorus(torus_radius=torus_radius, tube_radius=tube_radius,
                            frame=frame, anchor=anchor)
+        self.shapes.append(shape)
+        return shape
+
+    def add_3dm_mesh(self, filepath: str = None, scale: float = 1.0,
+                     frame: Frame = None, anchor: str = None) -> Placed3dmMesh:
+        """Place a Rhino .3dm mesh in the scene (defaults to the bundled AIS model)."""
+        shape = Placed3dmMesh(filepath=filepath, scale=scale,
+                              frame=frame, anchor=anchor)
         self.shapes.append(shape)
         return shape
 
@@ -388,12 +434,15 @@ class Renderer:
             modifiers   = anchor_marker.modifiers if anchor_marker is not None else []
             use_texture = "heart" in {m.name for m in modifiers} and self._texture is not None
 
-            objects = (shape.compas_tori(anchor_offset=anchor_offset)
-                       if isinstance(shape, PlaceTorus)
-                       else shape.compas_boxes(anchor_offset=anchor_offset))
+            if isinstance(shape, PlaceTorus):
+                objects = shape.compas_tori(anchor_offset=anchor_offset)
+            elif isinstance(shape, Placed3dmMesh):
+                objects = shape.compas_meshes(anchor_offset=anchor_offset)
+            else:
+                objects = shape.compas_boxes(anchor_offset=anchor_offset)
 
             for obj in objects:
-                mesh     = Mesh.from_shape(obj)
+                mesh = obj if isinstance(obj, Mesh) else Mesh.from_shape(obj)
                 vkeys    = list(mesh.vertices())
                 verts_3d = np.array([mesh.vertex_coordinates(v) for v in vkeys], dtype=np.float64)
                 pts2d    = self.marker_frame.project(verts_3d)

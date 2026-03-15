@@ -27,15 +27,21 @@ import base64
 import io
 import json
 import os
+import sys
 import threading
 import time
 
+import cv2
+import numpy as np
 import paho.mqtt.client as mqtt
 import requests
 from flask import Flask, jsonify
 from flask_cors import CORS
 from PIL import Image
-from ultralytics import YOLO
+
+# ── Import AR pipeline from 01_Marker_Recognition ────────────────────────────
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "01_Marker_Recognition"))
+from test_with_stream_normal import process_frame, model  # noqa: E402
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
@@ -49,11 +55,12 @@ IG_TOKEN               = os.environ.get("IG_TOKEN",               "EAANpAC8CLA0B
 CLOUDINARY_CLOUD_NAME  = os.environ.get("CLOUDINARY_CLOUD_NAME",  "duiypvo1n")  # free at cloudinary.com
 CLOUDINARY_UPLOAD_PRESET = os.environ.get("CLOUDINARY_UPLOAD_PRESET", "mikodigi")  # unsigned upload preset
 
-MQTT_BROKER    = "broker.hivemq.com"
-MQTT_PORT      = 1883
-MQTT_TOPIC_IMG = "ais-workshop/image"
-MQTT_TOPIC_RES = "ais-workshop/result"
-MQTT_TOPIC_ACK = "ais-workshop/ack"
+MQTT_BROKER      = "broker.hivemq.com"
+MQTT_PORT        = 1883
+MQTT_TOPIC_IMG   = "ais-workshop/image"
+MQTT_TOPIC_CHUNK = "ais-workshop/chunk"
+MQTT_TOPIC_RES   = "ais-workshop/result"
+MQTT_TOPIC_ACK   = "ais-workshop/ack"
 
 IG_API = "https://graph.facebook.com/v19.0"
 
@@ -63,15 +70,16 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 ACK_TIMEOUT = 10  # seconds to wait for client ack before proceeding anyway
 _pending_acks: dict[str, threading.Event] = {}
 
-# ── Model ─────────────────────────────────────────────────────────────────────
-
-model = YOLO(MODEL_PATH)
+# ── Chunk reassembly state ────────────────────────────────────────────────────
+_chunks: dict[str, dict] = {}
+_chunks_lock = threading.Lock()
 
 # ── MQTT ──────────────────────────────────────────────────────────────────────
 
 def _on_connect(client, userdata, flags, rc):
     print(f"MQTT connected (rc={rc})")
     client.subscribe(f"{MQTT_TOPIC_IMG}/+")
+    client.subscribe(f"{MQTT_TOPIC_CHUNK}/+")
     client.subscribe(f"{MQTT_TOPIC_ACK}/+")
 
 
@@ -83,6 +91,26 @@ def _wait_ack(session_id):
     _pending_acks.pop(session_id, None)
 
 
+def _dispatch(client, session_id, img_data, message, nickname, location, orientation):
+    """Save assembled image bytes and launch the processing thread."""
+    ts        = int(time.time() * 1000)
+    img_path  = os.path.join(CACHE_DIR, f"{ts}.jpg")
+    json_path = os.path.join(CACHE_DIR, f"{ts}.json")
+    print(f"Dispatching {len(img_data)//1024} KB image for session {session_id}")
+    with open(img_path, "wb") as f:
+        f.write(img_data)
+    client.publish(
+        f"{MQTT_TOPIC_RES}/{session_id}",
+        json.dumps({"status": "vision received"})
+    )
+    threading.Thread(
+        target=_process_image,
+        args=(client, session_id, ts, img_path, json_path,
+              message, nickname, location, orientation),
+        daemon=True
+    ).start()
+
+
 def _on_message(client, userdata, msg):
     # ─ Handle ack messages ──────────────────────────────────────────
     if msg.topic.startswith(f"{MQTT_TOPIC_ACK}/"):
@@ -91,39 +119,52 @@ def _on_message(client, userdata, msg):
             _pending_acks[session_id].set()
         return
 
-    # ─ Handle incoming image ─────────────────────────────────────────
-    try:
-        payload     = json.loads(msg.payload.decode())
-        session_id  = payload["session_id"]
-        img_data    = base64.b64decode(payload["image"])
-        message     = payload.get("message", "")
-        nickname    = payload.get("nickname", "anonymous")
-        location    = payload.get("location")
-        orientation = payload.get("orientation")
-        ts          = int(time.time() * 1000)
+    # ─ Handle chunked image ──────────────────────────────────────────
+    if msg.topic.startswith(f"{MQTT_TOPIC_CHUNK}/"):
+        try:
+            p          = json.loads(msg.payload.decode())
+            session_id = p["session_id"]
+            idx        = int(p["idx"])
+            total      = int(p["total"])
+            print(f"Chunk {idx+1}/{total} for {session_id} ({len(p['chunk'])//1024} KB)")
+            with _chunks_lock:
+                if session_id not in _chunks:
+                    _chunks[session_id] = {"meta": {}, "parts": {}, "total": total}
+                entry = _chunks[session_id]
+                entry["parts"][idx] = p["chunk"]
+                if idx == 0:
+                    entry["meta"] = {
+                        "message":     p.get("message", ""),
+                        "nickname":    p.get("nickname", "anonymous"),
+                        "location":    p.get("location"),
+                        "orientation": p.get("orientation"),
+                    }
+                if len(entry["parts"]) == total:
+                    b64      = "".join(entry["parts"][i] for i in range(total))
+                    img_data = base64.b64decode(b64)
+                    meta     = entry["meta"]
+                    del _chunks[session_id]
+            if len(entry["parts"]) == total:   # check outside lock
+                _dispatch(client, session_id, img_data,
+                          meta["message"], meta["nickname"],
+                          meta["location"], meta["orientation"])
+        except Exception as e:
+            print(f"Chunk error: {e}")
+        return
 
-        img_path  = os.path.join(CACHE_DIR, f"{ts}.jpg")
-        json_path = os.path.join(CACHE_DIR, f"{ts}.json")
-
-        with open(img_path, "wb") as f:
-            f.write(img_data)
-
-        # ─ Immediately acknowledge receipt on its own thread ────────────────
-        client.publish(
-            f"{MQTT_TOPIC_RES}/{session_id}",
-            json.dumps({"status": "vision received"})
-        )
-
-        # ─ Spin off worker so MQTT loop is never blocked ─────────────────
-        threading.Thread(
-            target=_process_image,
-            args=(client, session_id, ts, img_path, json_path,
-                  message, nickname, location, orientation),
-            daemon=True
-        ).start()
-
-    except Exception as e:
-        print(f"MQTT message error: {e}")
+    # ─ Handle legacy single-message image ────────────────────────────
+    if msg.topic.startswith(f"{MQTT_TOPIC_IMG}/"):
+        try:
+            raw_kb = len(msg.payload) / 1024
+            print(f"MQTT image received on {msg.topic}: {raw_kb:.1f} KB")
+            p        = json.loads(msg.payload.decode())
+            session_id  = p["session_id"]
+            img_data    = base64.b64decode(p["image"])
+            _dispatch(client, session_id, img_data,
+                      p.get("message", ""), p.get("nickname", "anonymous"),
+                      p.get("location"), p.get("orientation"))
+        except Exception as e:
+            print(f"MQTT message error: {e}")
 
 
 def _process_image(client, session_id, ts, img_path, json_path,
@@ -138,6 +179,12 @@ def _process_image(client, session_id, ts, img_path, json_path,
         # ─ Step 1: wait for client ack before running inference ─────────
         _wait_ack(session_id)
 
+        # Run full AR pipeline — produces annotated image with geometry overlay
+        frame      = cv2.imread(img_path)
+        annotated  = process_frame(frame)
+        cv2.imwrite(img_path, annotated)   # overwrite with AR-rendered version
+
+        # Extract YOLO detections from the raw frame for the JSON metadata
         results    = model(img_path)
         detections = []
         for result in results:
@@ -163,7 +210,17 @@ def _process_image(client, session_id, ts, img_path, json_path,
         with open(json_path, "w") as f:
             json.dump(meta, f, indent=2)
 
-        caption = json.dumps(meta, separators=(",", ":"))
+        # Build a human-readable caption (Instagram max is 2 200 chars)
+        det_lines = "\n".join(
+            f"  {d['label']} ({d['confidence']:.0%})" for d in detections
+        ) or "  (none)"
+        caption_parts = ["#AISworkshop #multidimensionvision"]
+        if nickname and nickname != "anonymous":
+            caption_parts.append(f"by {nickname}")
+        if message:
+            caption_parts.append(message)
+        caption_parts.append(f"Detections:\n{det_lines}")
+        caption = "\n".join(caption_parts)[:2200]   # hard-truncate to IG limit
         print(f"Session {session_id}: {len(detections)} detections")
 
         # ─ Step 2: publish detections, wait for ack before Instagram ───

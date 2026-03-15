@@ -289,21 +289,29 @@
       }
     });
 
-    // ── Send via MQTT ─────────────────────────────────────────────────────────
+    // ── Send via MQTT (chunked for high-res images) ──────────────────────────
+
+    const CHUNK_SIZE = 180 * 1024;   // 180 KB base64 per chunk → safely under 256 KB MQTT limit
 
     sendBtn.addEventListener('click', () => {
       if (!capturedBlob || !mqttReady) return;
       const reader = new FileReader();
       reader.onload = () => {
-        const payload = {
-          session_id:  sessionId,
-          image:       reader.result.split(',')[1],
+        const b64   = reader.result.split(',')[1];
+        const total = Math.ceil(b64.length / CHUNK_SIZE);
+        console.log(`Sending image: ~${Math.round(b64.length / 1024)} KB in ${total} chunk(s)`);
+        const meta = {
           message:     '',
           nickname:    nicknameInput.value.trim() || 'anonymous',
           location:    geoLocation,
-          orientation: deviceOrient
+          orientation: deviceOrient,
         };
-        mqttClient.publish(`ais-workshop/image/${sessionId}`, JSON.stringify(payload));
+        for (let i = 0; i < total; i++) {
+          const chunk = b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+          const pkt   = { session_id: sessionId, idx: i, total, chunk };
+          if (i === 0) Object.assign(pkt, meta);   // metadata only in first chunk
+          mqttClient.publish(`ais-workshop/chunk/${sessionId}`, JSON.stringify(pkt));
+        }
         // Return to video
         if (snapshot.src) URL.revokeObjectURL(snapshot.src);
         capturedBlob           = null;

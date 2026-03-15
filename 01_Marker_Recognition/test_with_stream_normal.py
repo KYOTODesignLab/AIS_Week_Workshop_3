@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 import os
+import sys
 import cv2
 import numpy as np
 
@@ -77,27 +78,108 @@ def process_frame(frame: np.ndarray) -> np.ndarray:
 
     return annotated
 
-# ── Standalone webcam entry point ─────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+_IMG_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"}
+
+def _collect_images(path: str) -> list[str]:
+    """Return a sorted list of image file paths from a file or directory."""
+    if os.path.isfile(path):
+        return [path]
+    if os.path.isdir(path):
+        return sorted(
+            os.path.join(path, f) for f in os.listdir(path)
+            if os.path.splitext(f)[1].lower() in _IMG_EXTS
+        )
+    print(f"Path not found: {path}")
+    return []
+
+
+def process_images(paths: list[str], save_dir: str | None = None) -> None:
+    """Run process_frame on a list of image files and display / save results.
+
+    Press any key to advance, 'q' to quit early.
+    If *save_dir* is given the annotated images are written there.
+    """
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
+
+    for p in paths:
+        frame = cv2.imread(p)
+        if frame is None:
+            print(f"Could not read: {p}")
+            continue
+
+        result = process_frame(frame)
+        title  = os.path.basename(p)
+        cv2.imshow(title, result)
+        print(f"[{title}]  press any key for next, 'q' to quit")
+
+        if save_dir:
+            out_path = os.path.join(save_dir, title)
+            cv2.imwrite(out_path, result)
+            print(f"  saved → {out_path}")
+
+        if cv2.waitKey(0) & 0xFF == ord("q"):
+            break
+
+    cv2.destroyAllWindows()
+
+
+# ── Standalone entry point ────────────────────────────────────────────────────
+# Usage:
+#   python test_with_stream_normal.py                      → webcam
+#   python test_with_stream_normal.py image.jpg            → single image
+#   python test_with_stream_normal.py images/              → all images in folder
+#   python test_with_stream_normal.py images/ --save out/  → process & save
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture(0)
+    args = sys.argv[1:]
 
-    if not cap.isOpened():
-        print("Error: could not open video stream.")
-        exit()
+    # Parse optional --save <dir>
+    save_dir = None
+    if "--save" in args:
+        idx = args.index("--save")
+        if idx + 1 < len(args):
+            save_dir = args[idx + 1]
+            args = args[:idx] + args[idx + 2:]
+        else:
+            print("--save requires a directory argument")
+            sys.exit(1)
 
-    print("Press 'q' to quit.")
+    if args:
+        # Image / folder mode
+        images = []
+        for a in args:
+            images.extend(_collect_images(a))
+        if not images:
+            print("No images found.")
+            sys.exit(1)
+        print(f"Processing {len(images)} image(s)…")
+        process_images(images, save_dir=save_dir)
+    else:
+        # Webcam mode (original behaviour)
+        cap = cv2.VideoCapture(0)
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Failed to grab frame.")
-            break
+        if not cap.isOpened():
+            print("Error: could not open video stream.")
+            sys.exit(1)
 
-        cv2.imshow("YOLOv8 Stream", process_frame(frame))
+        print("Press 'q' to quit.")
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame.")
+                break
+
+            cv2.imshow("YOLOv8 Stream", process_frame(frame))
+
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
 
     cap.release()
     cv2.destroyAllWindows()

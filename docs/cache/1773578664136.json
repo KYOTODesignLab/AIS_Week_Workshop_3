@@ -1,0 +1,138 @@
+{
+  "timestamp": 1773578664136,
+  "session_id": "g1coeojr9qmmrquhau",
+  "message": "",
+  "nickname": "ika",
+  "location": {
+    "latitude": 35.0493728460281,
+    "longitude": 135.78302571470888,
+    "accuracy": 10.704952231660327
+  },
+  "orientation": {
+    "alpha": 5.69,
+    "beta": 35.09,
+    "gamma": -14.56
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.841,
+      "box": {
+        "x1": 1324,
+        "y1": 2335,
+        "x2": 1523,
+        "y2": 2475
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.593,
+      "box": {
+        "x1": 728,
+        "y1": 2280,
+        "x2": 867,
+        "y2": 2353
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.531,
+      "box": {
+        "x1": 1628,
+        "y1": 2165,
+        "x2": 1908,
+        "y2": 2302
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.511,
+      "box": {
+        "x1": 1732,
+        "y1": 2462,
+        "x2": 1927,
+        "y2": 2574
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.48,
+      "box": {
+        "x1": 1649,
+        "y1": 2070,
+        "x2": 1752,
+        "y2": 2138
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.399,
+      "box": {
+        "x1": 1409,
+        "y1": 1767,
+        "x2": 1579,
+        "y2": 1863
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.375,
+      "box": {
+        "x1": 1849,
+        "y1": 1698,
+        "x2": 1925,
+        "y2": 1751
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.364,
+      "box": {
+        "x1": 880,
+        "y1": 2205,
+        "x2": 1146,
+        "y2": 2354
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.334,
+      "box": {
+        "x1": 1029,
+        "y1": 2362,
+        "x2": 1208,
+        "y2": 2472
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.327,
+      "box": {
+        "x1": 883,
+        "y1": 2198,
+        "x2": 1145,
+        "y2": 2354
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.291,
+      "box": {
+        "x1": 1920,
+        "y1": 1901,
+        "x2": 2068,
+        "y2": 1987
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.251,
+      "box": {
+        "x1": 1926,
+        "y1": 2194,
+        "x2": 2060,
+        "y2": 2287
+      }
+    }
+  ]
+}

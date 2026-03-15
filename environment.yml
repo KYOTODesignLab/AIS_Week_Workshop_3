@@ -5,7 +5,45 @@ channels:
 dependencies:
   - python=3.11
   - pip
-  - pyyaml
   - pip:
-      - opencv-python
+      # ── Core vision ───────────────────────────────────────────────
+      - opencv-python>=4.13
       - ultralytics>=8.3,<9
+      - pillow>=12.0
+      # ── Deep learning ─────────────────────────────────────────────
+      # PyTorch is NOT listed here — install it separately after activating
+      # the environment. See the README for step-by-step instructions.
+      - onnx>=1.20
+      - onnxslim>=0.1
+      # ── Web server ────────────────────────────────────────────────
+      - flask>=3.1
+      - flask-cors>=3.0
+      - flask-socketio>=5.6
+      - python-engineio>=4.13
+      - python-socketio>=5.16
+      - werkzeug>=3.1
+      # ── MQTT ──────────────────────────────────────────────────────
+      - paho-mqtt>=2.1
+      # ── Instagram / Cloudinary ────────────────────────────────────
+      - instagrapi>=2.3
+      - requests>=2.32
+      # ── Geometry / parametric model ───────────────────────────────
+      - compas>=2.15
+      - numpy>=2.4
+      - scipy>=1.17
+      - matplotlib>=3.10
+      # ── Data / utilities ──────────────────────────────────────────
+      - pyyaml>=6.0
+      - qrcode>=8.0
+      - polars>=1.38
+      - psutil>=7.2
+      - tqdm>=4.67
+      - watchdog>=6.0
+      # ── Media ─────────────────────────────────────────────────────
+      - moviepy>=1.0
+      - imageio>=2.37
+      - imageio-ffmpeg>=0.6
+      # ── Crypto / networking ───────────────────────────────────────
+      - cryptography>=46.0
+      - pysocks>=1.7
+      - pycryptodomex>=3.23

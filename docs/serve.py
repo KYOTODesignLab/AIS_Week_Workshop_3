@@ -66,6 +66,12 @@ IG_API = "https://graph.facebook.com/v19.0"
 
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# ── Logging helper ────────────────────────────────────────────────────────────
+
+def _log(msg, tag="INFO"):
+    ts = time.strftime("%H:%M:%S")
+    print(f"[{ts}] [{tag}] {msg}", flush=True)
+
 # ── Handshake state ───────────────────────────────────────────────────────────────
 ACK_TIMEOUT = 10  # seconds to wait for client ack before proceeding anyway
 _pending_acks: dict[str, threading.Event] = {}
@@ -77,10 +83,14 @@ _chunks_lock = threading.Lock()
 # ── MQTT ──────────────────────────────────────────────────────────────────────
 
 def _on_connect(client, userdata, flags, rc):
-    print(f"MQTT connected (rc={rc})")
+    if rc == 0:
+        _log(f"MQTT connected to {MQTT_BROKER}:{MQTT_PORT}", "MQTT")
+    else:
+        _log(f"MQTT connection failed (rc={rc})", "MQTT")
     client.subscribe(f"{MQTT_TOPIC_IMG}/+")
     client.subscribe(f"{MQTT_TOPIC_CHUNK}/+")
     client.subscribe(f"{MQTT_TOPIC_ACK}/+")
+    _log(f"Subscribed to image / chunk / ack topics", "MQTT")
 
 
 def _wait_ack(session_id):
@@ -96,9 +106,10 @@ def _dispatch(client, session_id, img_data, message, nickname, location, orienta
     ts        = int(time.time() * 1000)
     img_path  = os.path.join(CACHE_DIR, f"{ts}.jpg")
     json_path = os.path.join(CACHE_DIR, f"{ts}.json")
-    print(f"Dispatching {len(img_data)//1024} KB image for session {session_id}")
+    _log(f"[{session_id}] Image assembled: {len(img_data)//1024} KB  nickname={nickname!r}  loc={location}", "IMG")
     with open(img_path, "wb") as f:
         f.write(img_data)
+    _log(f"[{session_id}] Saved → {img_path}", "IMG")
     client.publish(
         f"{MQTT_TOPIC_RES}/{session_id}",
         json.dumps({"status": "vision received"})
@@ -117,6 +128,7 @@ def _on_message(client, userdata, msg):
         session_id = msg.topic.split("/")[-1]
         if session_id in _pending_acks:
             _pending_acks[session_id].set()
+            _log(f"[{session_id}] ACK received", "ACK")
         return
 
     # ─ Handle chunked image ──────────────────────────────────────────
@@ -126,7 +138,7 @@ def _on_message(client, userdata, msg):
             session_id = p["session_id"]
             idx        = int(p["idx"])
             total      = int(p["total"])
-            print(f"Chunk {idx+1}/{total} for {session_id} ({len(p['chunk'])//1024} KB)")
+            _log(f"[{session_id}] Chunk {idx+1}/{total}  ({len(p['chunk'])//1024} KB)", "CHUNK")
             with _chunks_lock:
                 if session_id not in _chunks:
                     _chunks[session_id] = {"meta": {}, "parts": {}, "total": total}
@@ -144,19 +156,20 @@ def _on_message(client, userdata, msg):
                     img_data = base64.b64decode(b64)
                     meta     = entry["meta"]
                     del _chunks[session_id]
+                    _log(f"[{session_id}] All {total} chunks received — reassembling {len(img_data)//1024} KB", "CHUNK")
             if len(entry["parts"]) == total:   # check outside lock
                 _dispatch(client, session_id, img_data,
                           meta["message"], meta["nickname"],
                           meta["location"], meta["orientation"])
         except Exception as e:
-            print(f"Chunk error: {e}")
+            _log(f"Chunk error: {e}", "ERROR")
         return
 
     # ─ Handle legacy single-message image ────────────────────────────
     if msg.topic.startswith(f"{MQTT_TOPIC_IMG}/"):
         try:
             raw_kb = len(msg.payload) / 1024
-            print(f"MQTT image received on {msg.topic}: {raw_kb:.1f} KB")
+            _log(f"Legacy single-message image on {msg.topic}: {raw_kb:.1f} KB", "IMG")
             p        = json.loads(msg.payload.decode())
             session_id  = p["session_id"]
             img_data    = base64.b64decode(p["image"])
@@ -164,7 +177,7 @@ def _on_message(client, userdata, msg):
                       p.get("message", ""), p.get("nickname", "anonymous"),
                       p.get("location"), p.get("orientation"))
         except Exception as e:
-            print(f"MQTT message error: {e}")
+            _log(f"MQTT message error: {e}", "ERROR")
 
 
 def _process_image(client, session_id, ts, img_path, json_path,
@@ -177,14 +190,19 @@ def _process_image(client, session_id, ts, img_path, json_path,
 
     try:
         # ─ Step 1: wait for client ack before running inference ─────────
+        _log(f"[{session_id}] Waiting for client ACK before inference…", "PROC")
         _wait_ack(session_id)
 
         # Run full AR pipeline — produces annotated image with geometry overlay
+        _log(f"[{session_id}] Running AR pipeline (process_frame)…", "PROC")
+        t0        = time.time()
         frame      = cv2.imread(img_path)
         annotated  = process_frame(frame)
         cv2.imwrite(img_path, annotated)   # overwrite with AR-rendered version
+        _log(f"[{session_id}] AR pipeline done in {time.time()-t0:.1f}s", "PROC")
 
         # Extract YOLO detections from the raw frame for the JSON metadata
+        _log(f"[{session_id}] Running YOLO detection…", "PROC")
         results    = model(img_path)
         detections = []
         for result in results:
@@ -197,6 +215,8 @@ def _process_image(client, session_id, ts, img_path, json_path,
                     "label": label, "confidence": confidence,
                     "box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
                 })
+        _log(f"[{session_id}] Detection complete: {len(detections)} object(s) — " +
+             ", ".join(f"{d['label']} {d['confidence']:.0%}" for d in detections) or "none", "PROC")
 
         meta = {
             "timestamp":   ts,
@@ -228,8 +248,9 @@ def _process_image(client, session_id, ts, img_path, json_path,
             trimmed = len(detections) - len(kept)
             caption = _make_caption(kept)[:-1]  # strip closing }
             caption += f',"excess_recognitions":{trimmed}}}'
+            _log(f"[{session_id}] Caption trimmed: kept {len(kept)}, dropped {trimmed} detections", "PROC")
         caption = caption[:IG_LIMIT]   # hard safety cap
-        print(f"Session {session_id}: {len(detections)} detections, caption {len(caption)} chars")
+        _log(f"[{session_id}] {len(detections)} detections  caption={len(caption)} chars", "PROC")
 
         # ─ Step 2: publish detections, wait for ack before Instagram ───
         client.publish(
@@ -238,13 +259,14 @@ def _process_image(client, session_id, ts, img_path, json_path,
         )
 
         if IG_USER_ID and IG_TOKEN and CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET:
+            _log(f"[{session_id}] Waiting for client ACK before Instagram upload…", "IG")
             _wait_ack(session_id)
             _post_to_instagram(client, session_id, ts, caption)
         elif IG_USER_ID or IG_TOKEN:
-            print("Instagram credentials incomplete — skipping auto-post")
+            _log(f"[{session_id}] Instagram credentials incomplete — skipping auto-post", "WARN")
 
     except Exception as e:
-        print(f"Processing error: {e}")
+        _log(f"[{session_id}] Processing error: {e}", "ERROR")
 
 
 def _post_to_instagram(mqtt_client, session_id, ts, caption):
@@ -258,8 +280,10 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
         with open(img_path, "rb") as f:
             img_bytes = f.read()
         # Center-crop to 1:1 square (always valid aspect ratio for Instagram)
+        _log(f"[{session_id}] Cropping image to 1:1 square for Instagram…", "IG")
         img = Image.open(io.BytesIO(img_bytes))
         w, h = img.size
+        _log(f"[{session_id}] Original image size: {w}×{h}", "IG")
         side = min(w, h)
         left = (w - side) // 2
         top  = (h - side) // 2
@@ -276,10 +300,10 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
         cloudinary_data = cloudinary_res.json()
         public_url = cloudinary_data.get("secure_url")
         if not public_url:
-            print(f"Cloudinary upload failed: {cloudinary_data}")
+            _log(f"[{session_id}] Cloudinary upload failed: {cloudinary_data}", "ERROR")
             _pub_status("public is inaccessible")
             return
-        print(f"Cloudinary URL: {public_url}")
+        _log(f"[{session_id}] Cloudinary URL: {public_url}", "IG")
         create_res  = requests.post(
             f"{IG_API}/{IG_USER_ID}/media",
             params={"image_url": public_url, "caption": caption, "access_token": IG_TOKEN},
@@ -287,9 +311,10 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
         )
         creation_id = create_res.json().get("id")
         if not creation_id:
-            print(f"IG media creation failed: {create_res.json()}")
+            _log(f"[{session_id}] IG media creation failed: {create_res.json()}", "ERROR")
             _pub_status("public is inaccessible")
             return
+        _log(f"[{session_id}] IG media container created: {creation_id}", "IG")
 
         # Poll until container status is FINISHED (Instagram needs time to process)
         for attempt in range(12):
@@ -300,15 +325,15 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
                 timeout=10,
             )
             status_code = status_res.json().get("status_code", "")
-            print(f"IG container status: {status_code} (attempt {attempt + 1})")
+            _log(f"[{session_id}] IG container status: {status_code} (attempt {attempt+1}/12)", "IG")
             if status_code == "FINISHED":
                 break
             if status_code == "ERROR":
-                print(f"IG container error: {status_res.json()}")
+                _log(f"[{session_id}] IG container error: {status_res.json()}", "ERROR")
                 _pub_status("public is inaccessible")
                 return
         else:
-            print("IG container did not become ready in time")
+            _log(f"[{session_id}] IG container did not become ready in time", "ERROR")
             _pub_status("public is inaccessible")
             return
 
@@ -319,13 +344,13 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
         )
         post_id = pub_res.json().get("id")
         if post_id:
-            print(f"Instagram post published: {post_id}")
+            _log(f"[{session_id}] Instagram post published: {post_id}", "IG")
             _pub_status("multydimension vision is shared to public")
         else:
-            print(f"IG publish failed: {pub_res.json()}")
+            _log(f"[{session_id}] IG publish failed: {pub_res.json()}", "ERROR")
             _pub_status("public is inaccessible")
     except Exception as e:
-        print(f"Instagram auto-post error: {e}")
+        _log(f"[{session_id}] Instagram auto-post error: {e}", "ERROR")
         _pub_status("public is inaccessible")
 
 
@@ -334,8 +359,10 @@ def _start_mqtt():
         c = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
     except AttributeError:
         c = mqtt.Client()   # paho-mqtt < 2.0
-    c.on_connect = _on_connect
-    c.on_message = _on_message
+    c.on_connect    = _on_connect
+    c.on_message    = _on_message
+    c.on_disconnect = lambda cl, ud, rc: _log(f"MQTT disconnected (rc={rc})", "MQTT")
+    _log(f"Connecting to MQTT broker {MQTT_BROKER}:{MQTT_PORT}…", "MQTT")
     c.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
     c.loop_forever()
 

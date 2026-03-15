@@ -1,0 +1,118 @@
+{
+  "timestamp": 1773577928900,
+  "session_id": "s77h1g6l6uimmrqgfiu",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.04948262209,
+    "longitude": 135.78297274279333,
+    "accuracy": 23.951603464475873
+  },
+  "orientation": {
+    "alpha": 3.18,
+    "beta": 46.94,
+    "gamma": 1.11
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.914,
+      "box": {
+        "x1": 1474,
+        "y1": 2128,
+        "x2": 1704,
+        "y2": 2353
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.876,
+      "box": {
+        "x1": 1596,
+        "y1": 2552,
+        "x2": 1718,
+        "y2": 2696
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.718,
+      "box": {
+        "x1": 1933,
+        "y1": 2044,
+        "x2": 2160,
+        "y2": 2246
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.684,
+      "box": {
+        "x1": 730,
+        "y1": 2516,
+        "x2": 895,
+        "y2": 2692
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.479,
+      "box": {
+        "x1": 1195,
+        "y1": 2913,
+        "x2": 1418,
+        "y2": 3155
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.477,
+      "box": {
+        "x1": 52,
+        "y1": 2456,
+        "x2": 277,
+        "y2": 2689
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.469,
+      "box": {
+        "x1": 2035,
+        "y1": 1563,
+        "x2": 2145,
+        "y2": 1657
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.315,
+      "box": {
+        "x1": 1217,
+        "y1": 2386,
+        "x2": 1405,
+        "y2": 2559
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.306,
+      "box": {
+        "x1": 7,
+        "y1": 1817,
+        "x2": 155,
+        "y2": 1924
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.305,
+      "box": {
+        "x1": 62,
+        "y1": 1668,
+        "x2": 169,
+        "y2": 1754
+      }
+    }
+  ]
+}

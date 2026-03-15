@@ -1,0 +1,64 @@
+{
+  "timestamp": 1773578642359,
+  "session_id": "xbr87yxwn3mmrqw8v6",
+  "message": "",
+  "nickname": "ika",
+  "location": null,
+  "orientation": {
+    "alpha": 355.29,
+    "beta": 59.96,
+    "gamma": 6.19
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.664,
+      "box": {
+        "x1": 1669,
+        "y1": 1910,
+        "x2": 1812,
+        "y2": 1980
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.573,
+      "box": {
+        "x1": 1977,
+        "y1": 2260,
+        "x2": 2092,
+        "y2": 2343
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.391,
+      "box": {
+        "x1": 143,
+        "y1": 2154,
+        "x2": 295,
+        "y2": 2257
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.307,
+      "box": {
+        "x1": 1738,
+        "y1": 2052,
+        "x2": 1837,
+        "y2": 2121
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.261,
+      "box": {
+        "x1": 140,
+        "y1": 2151,
+        "x2": 298,
+        "y2": 2257
+      }
+    }
+  ]
+}

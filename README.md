@@ -73,8 +73,43 @@ python -m pip install --upgrade pip
 python -m pip install ultralytics
 ```
 
-If you have an Nvidia graphics card and want CUDA acceleration, install the CUDA driver first: https://developer.nvidia.com/cuda-downloads?target_os=Windows&target_arch=x86_64&target_version=11&target_type=exe_local
+## Installing PyTorch
 
-Then install the matching PyTorch command from the official selector: https://pytorch.org/get-started/locally/
+PyTorch is **not included** in `environment.yml` because the correct build depends on your operating system, Python version, and whether you have an NVIDIA GPU. Install it manually after creating the conda environment.
 
-Do not keep hard-coded packages such as `torch==2.10.0+cu130` in `environment.yml`, because the correct Torch build depends on both your Python version and your CUDA version.
+### CPU-only (any machine)
+
+Activate the environment and run the command shown by the [official PyTorch selector](https://pytorch.org/get-started/locally/) for your platform with *Package: Pip* and *Compute Platform: CPU*. Example:
+
+```
+conda activate AIS26
+pip install torch torchvision torchaudio
+```
+
+### NVIDIA GPU (CUDA acceleration)
+
+1. **Check your GPU driver** — open a terminal and run:
+   ```
+   nvidia-smi
+   ```
+   The top-right corner of the output shows the maximum CUDA version your driver supports (e.g. `CUDA Version: 12.8`).
+
+2. **Install the CUDA Toolkit** that matches your driver:
+   https://developer.nvidia.com/cuda-downloads
+
+3. **Activate the environment** and install the matching PyTorch build:
+   ```
+   conda activate AIS26
+   ```
+   Open https://pytorch.org/get-started/locally/, select *Package: Pip*, *Language: Python*, *Compute Platform: CUDA XX.X* (matching your driver), and run the generated command. Example for CUDA 12.8:
+   ```
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+   ```
+
+4. **Verify the installation:**
+   ```
+   python -c "import torch; print(torch.__version__); print('CUDA available:', torch.cuda.is_available())"
+   ```
+   You should see `True` for CUDA if your GPU and driver are set up correctly.
+
+> **Note:** Do not hard-code a specific build like `torch==2.10.0+cu130` in `environment.yml` — it will break for anyone with a different CUDA version or OS.

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Camera Stream</title>
+  <link rel="stylesheet" href="/css/camera.css" />
+</head>
+<body>
+
+  <div id="ssl-banner">
+    ⚠ If you see a "not secure" warning, tap <strong>Advanced → Proceed</strong>
+    to allow camera access over this local connection.
+  </div>
+
+  <div id="preview-wrap">
+    <video id="preview" autoplay playsinline muted></video>
+    <canvas id="send-canvas"></canvas>
+
+    <div id="overlay">
+      <h2 id="overlay-title">Starting camera…</h2>
+      <p id="overlay-sub">Please allow camera access when prompted.</p>
+    </div>
+  </div>
+
+  <div id="status-bar">
+    <div id="status-dot" class="connecting"></div>
+    <span id="status-label">Initializing…</span>
+    <span id="fps-label"></span>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    // ── Config ────────────────────────────────────────────────────
+    const SEND_EVERY_MS = 100;   // max 10 fps to server
+
+    // ── State ─────────────────────────────────────────────────────
+    let streaming   = false;
+    let lastSendTs  = 0;
+    let sendLock    = false;
+    let framesSent  = 0;
+
+    // ── Elements ──────────────────────────────────────────────────
+    const video       = document.getElementById('preview');
+    const sendCanvas  = document.getElementById('send-canvas');
+    const overlayEl   = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlaySub  = document.getElementById('overlay-sub');
+    const dot         = document.getElementById('status-dot');
+    const statusLabel = document.getElementById('status-label');
+    const fpsLabel    = document.getElementById('fps-label');
+    const sslBanner   = document.getElementById('ssl-banner');
+
+    // ── Socket.IO ─────────────────────────────────────────────────
+    const socket = io({ transports: ['websocket'] });
+    socket.on('disconnect', () => { if (streaming) setStatus('error', 'Socket disconnected…'); });
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function setStatus(cls, text) {
+      dot.className = cls;
+      statusLabel.textContent = text;
+    }
+
+    // ── Camera ────────────────────────────────────────────────────
+    async function startCamera() {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error(
+            'Camera API unavailable. This page must be opened over HTTPS.\n' +
+            'Accept the SSL certificate warning first (tap Advanced → Proceed), then reload.'
+          );
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        });
+        video.srcObject = stream;
+        await new Promise(res => { video.onloadedmetadata = res; });
+        overlayEl.classList.add('hidden');
+        if (location.protocol === 'https:') sslBanner.style.display = 'none';
+        streaming = true;
+        setStatus('streaming', 'Streaming to server…');
+
+        setInterval(() => {
+          if (streaming) { fpsLabel.textContent = `${framesSent} fps`; framesSent = 0; }
+        }, 1000);
+
+        requestAnimationFrame(sendLoop);
+      } catch (err) {
+        overlayTitle.textContent = 'Camera access denied';
+        overlaySub.textContent   = err.message;
+        setStatus('error', 'Camera error: ' + err.name);
+      }
+    }
+
+    // ── Send raw frame to server (PC runs YOLO) ───────────────────
+    function sendLoop() {
+      const now = Date.now();
+      if (
+        streaming && socket.connected && !sendLock &&
+        now - lastSendTs >= SEND_EVERY_MS &&
+        video.readyState >= 2 && video.videoWidth > 0
+      ) {
+        lastSendTs = now;
+        const vw = video.videoWidth, vh = video.videoHeight;
+        sendCanvas.width = vw; sendCanvas.height = vh;
+        sendCanvas.getContext('2d').drawImage(video, 0, 0);
+        sendLock = true;
+        socket.emit('frame', sendCanvas.toDataURL('image/jpeg', 0.72), () => { sendLock = false; });
+        setTimeout(() => { sendLock = false; }, 500);
+        framesSent++;
+      }
+      requestAnimationFrame(sendLoop);
+    }
+
+    // ── Boot ──────────────────────────────────────────────────────
+    if (location.protocol === 'https:') sslBanner.style.display = 'block';
+    startCamera();
+  </script>
+</body>
+</html>

@@ -71,16 +71,17 @@ class Marker:
 # -- Step 1: detect markers --------------------------------------------------
 
 BORDER_PAD      = 15
-MIN_INNER_STD   = 30
+MIN_INNER_STD   = 20
 MIN_BORDER_MEAN = 140
 
 
 class MarkerDetector:
 
-    def __init__(self, model, config: MarkerConfig = None):
-        self.model         = model
-        self.config        = config or DEFAULT_CONFIG
-        self._last_results = None
+    def __init__(self, model, config: MarkerConfig = None, filter_results: bool = False):
+        self.model          = model
+        self.config         = config or DEFAULT_CONFIG
+        self.filter_results = filter_results
+        self._last_results  = None
 
     def detect(self, frame: np.ndarray) -> list:
         self._last_results = self.model(frame, verbose=False)[0]
@@ -102,9 +103,10 @@ class MarkerDetector:
             name   = self.model.names[int(cls.item())]
             c      = float(conf.item())
 
-            valid, _, _ = self._stats(gray, frame.shape[:2], x1, y1, x2, y2)
-            if not valid:
-                continue
+            if self.filter_results:
+                valid, _, _ = self._stats(gray, frame.shape[:2], x1, y1, x2, y2)
+                if not valid:
+                    continue
 
             if name in base_set:
                 named[name] = Marker(name, c, (cx, cy), size, role_type="base")
@@ -126,7 +128,10 @@ class MarkerDetector:
             name  = self.model.names[int(cls.item())]
             fh, fw = img.shape[:2]
             gray   = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            valid, _, _ = self._stats(gray, (fh, fw), x1, y1, x2, y2)
+            if self.filter_results:
+                valid, _, _ = self._stats(gray, (fh, fw), x1, y1, x2, y2)
+            else:
+                valid = True
             color = (0, 200, 0) if valid else (120, 120, 120)
             alpha = 0.6 if valid else 0.4
             label = f"{name} {float(conf.item()):.2f}"

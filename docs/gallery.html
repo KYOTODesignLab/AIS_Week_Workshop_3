@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIS Gallery</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&family=Roboto+Mono:wght@300&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Roboto', sans-serif;
+      font-weight: 300;
+      min-height: 100vh;
+    }
+
+    /* ── Title bar ───────────────────────────────────────────────────────── */
+    #title-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      letter-spacing: 0.14em;
+      font-size: 0.88rem;
+    }
+
+    #title-text { color: rgba(255,255,255,0.9); }
+
+    #live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: 0.06em;
+    }
+
+    #live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #444;
+      flex-shrink: 0;
+      transition: background 0.4s;
+    }
+    #live-dot.connected { background: #4ade80; animation: pulse 2.4s infinite; }
+    #live-dot.polling   { background: #facc15; }
+    #live-dot.error     { background: #f87171; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.35; }
+    }
+
+    /* ── Hero section ────────────────────────────────────────────────────── */
+    #hero-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 0 16px;
+    }
+
+    #hero-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.25em;
+      color: rgba(255,255,255,0.25);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    #hero-wrapper {
+      width: 50vw;
+      max-width: 960px;
+      min-width: 260px;
+    }
+
+    /* ── Grid section ────────────────────────────────────────────────────── */
+    #grid-label {
+      text-align: center;
+      font-size: 0.6rem;
+      letter-spacing: 0.28em;
+      color: rgba(255,255,255,0.18);
+      padding: 28px 0 14px;
+      text-transform: uppercase;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 3px;
+      padding: 0 3px 50px;
+    }
+
+    /* ── Gallery item (hero + grid share this) ───────────────────────────── */
+    .gallery-item {
+      position: relative;
+      overflow: hidden;
+      cursor: default;
+      background: #111;
+    }
+
+    /* Hero: natural aspect ratio from the image */
+    #hero-wrapper .gallery-item img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 76vh;
+      object-fit: contain;
+      transition: filter 0.3s ease;
+    }
+    #hero-wrapper .gallery-item:hover img { filter: brightness(0.3); }
+
+    /* Hero border */
+    #hero-wrapper .gallery-item {
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Grid tiles: square */
+    #grid .gallery-item { aspect-ratio: 1; }
+    #grid .gallery-item img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: filter 0.3s ease, transform 0.3s ease;
+    }
+    #grid .gallery-item:hover img {
+      filter: brightness(0.28);
+      transform: scale(1.05);
+    }
+
+    /* ── JSON overlay ────────────────────────────────────────────────────── */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      padding: 13px 15px;
+      overflow-y: auto;
+      opacity: 0;
+      transition: opacity 0.22s ease;
+      pointer-events: none;
+    }
+    .gallery-item:hover .overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay-ts {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.38);
+      margin-bottom: 8px;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .overlay pre {
+      font-family: 'Roboto Mono', monospace;
+      font-weight: 300;
+      font-size: 0.62rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* JSON syntax colors */
+    .jk { color: #9cdcfe; }   /* key   */
+    .js { color: #ce9178; }   /* str   */
+    .jn { color: #b5cea8; }   /* num   */
+    .jb { color: #569cd6; }   /* bool  */
+    .jl { color: #569cd6; }   /* null  */
+
+    /* ── NEW badge ───────────────────────────────────────────────────────── */
+    .badge-new {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #4ade80;
+      color: #000;
+      font-size: 0.6rem;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      padding: 2px 7px;
+      border-radius: 3px;
+      z-index: 10;
+      transition: opacity 1.2s ease;
+    }
+    .badge-new.fade { opacity: 0; }
+
+    /* ── Entry animation ─────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeUp 0.5s ease forwards; }
+
+    /* ── Empty state ─────────────────────────────────────────────────────── */
+    #empty-state {
+      display: none;
+      text-align: center;
+      padding: 80px 20px;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.25);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Offline banner ──────────────────────────────────────────────────── */
+    #offline-banner {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="title-bar">
+    <span id="title-text">AIS GALLERY</span>
+    <span id="live-indicator">
+      <span id="live-dot"></span>
+      <span id="live-text">connecting…</span>
+    </span>
+  </div>
+
+  <section id="hero-section">
+    <div id="hero-label">latest</div>
+    <div id="hero-wrapper"></div>
+  </section>
+
+  <div id="empty-state">no captures yet</div>
+
+  <div id="grid-label">all captures</div>
+  <div id="grid"></div>
+
+  <div id="offline-banner"></div>
+
+  <script>
+    // ── MQTT ──────────────────────────────────────────────────────────────────
+    const MQTT_BROKER    = 'wss://broker.hivemq.com:8884/mqtt';
+    const GALLERY_TOPIC  = 'ais-workshop/gallery';
+    const CLIENT_ID      = 'ais-gallery-' + Math.random().toString(36).slice(2);
+
+    // ── JSON syntax highlighter (XSS-safe, character-level tokenizer) ─────────
+    function highlightJSON(obj) {
+      const raw = JSON.stringify(obj, null, 2);
+      const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      let html = '';
+      let i = 0;
+      while (i < raw.length) {
+        if (raw[i] === '"') {
+          let j = i + 1;
+          while (j < raw.length) {
+            if (raw[j] === '\\') { j += 2; continue; }
+            if (raw[j] === '"')  { j++; break; }
+            j++;
+          }
+          const token = raw.slice(i, j);
+          let k = j;
+          while (k < raw.length && raw[k] === ' ') k++;
+          html += raw[k] === ':'
+            ? `<span class="jk">${esc(token)}</span>`
+            : `<span class="js">${esc(token)}</span>`;
+          i = j; continue;
+        }
+        if (raw.slice(i,i+4)==='true')  { html+='<span class="jb">true</span>';  i+=4; continue; }
+        if (raw.slice(i,i+5)==='false') { html+='<span class="jb">false</span>'; i+=5; continue; }
+        if (raw.slice(i,i+4)==='null')  { html+='<span class="jl">null</span>';  i+=4; continue; }
+        if (raw[i]==='-'||(raw[i]>='0'&&raw[i]<='9')) {
+          let j=i; if(raw[j]==='-')j++;
+          while(j<raw.length&&/[\d.eE+\-]/.test(raw[j]))j++;
+          html+=`<span class="jn">${esc(raw.slice(i,j))}</span>`; i=j; continue;
+        }
+        const ch=raw[i]; html+=ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':ch; i++;
+      }
+      return html;
+    }
+
+    // ── Gallery state ─────────────────────────────────────────────────────────
+    let heroItem = null;
+
+    function fmtTs(ts) {
+      const d = new Date(parseInt(ts, 10));
+      return isNaN(d) ? ts : d.toLocaleString();
+    }
+
+    // item: { ts, meta, imgSrc }
+    function makeCard(item) {
+      const div = document.createElement('div');
+      div.className  = 'gallery-item fade-in';
+      div.dataset.ts = item.ts;
+
+      const img = document.createElement('img');
+      img.src     = item.imgSrc;
+      img.loading = 'lazy';
+      img.alt     = item.meta.nickname || item.ts;
+
+      const ov       = document.createElement('div');
+      ov.className   = 'overlay';
+      const ts_label = document.createElement('div');
+      ts_label.className   = 'overlay-ts';
+      ts_label.textContent = fmtTs(item.ts)
+        + (item.meta.nickname ? `  ·  ${item.meta.nickname}` : '');
+      const pre     = document.createElement('pre');
+      pre.innerHTML = highlightJSON(item.meta);
+      ov.appendChild(ts_label);
+      ov.appendChild(pre);
+
+      div.appendChild(img);
+      div.appendChild(ov);
+      return div;
+    }
+
+    function addBadge(card) {
+      const badge = document.createElement('span');
+      badge.className   = 'badge-new';
+      badge.textContent = 'NEW';
+      card.appendChild(badge);
+      setTimeout(() => badge.classList.add('fade'), 4000);
+      setTimeout(() => badge.remove(), 5500);
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function setStatus(dotClass, text) {
+      document.getElementById('live-dot').className  = dotClass;
+      document.getElementById('live-text').textContent = text;
+    }
+
+    function setHero(item, showBadge = false) {
+      const wrapper  = document.getElementById('hero-wrapper');
+      wrapper.innerHTML = '';
+      const card = makeCard(item);
+      if (showBadge) addBadge(card);
+      wrapper.appendChild(card);
+      heroItem = item;
+    }
+
+    function pushNewImage(item) {
+      if (heroItem) {
+        const grid = document.getElementById('grid');
+        const oldCard = makeCard(heroItem);
+        if (grid.children.length === 0) {
+          grid.appendChild(oldCard);
+        } else {
+          const pos = Math.floor(Math.random() * (grid.children.length + 1));
+          grid.insertBefore(oldCard, grid.children[pos] || null);
+        }
+      }
+      setHero(item, true);
+      document.getElementById('empty-state').style.display = 'none';
+    }
+
+    // ── Initial load from static cache/index.json ─────────────────────────────
+    async function loadGallery() {
+      try {
+        const idxRes = await fetch('./cache/index.json');
+        if (!idxRes.ok) throw new Error('index.json not found');
+        const timestamps = await idxRes.json();  // sorted asc
+
+        if (!timestamps.length) {
+          document.getElementById('empty-state').style.display = 'block';
+          return;
+        }
+
+        // Load all metadata JSON files in parallel
+        const items = await Promise.all(timestamps.map(async ts => {
+          let meta = {};
+          try {
+            const r = await fetch(`./cache/${ts}.json`);
+            if (r.ok) meta = await r.json();
+          } catch (_) {}
+          return { ts, meta, imgSrc: `./cache/${ts}.jpg` };
+        }));
+
+        const newest = items[items.length - 1];
+        const rest   = shuffle(items.slice(0, items.length - 1));
+
+        setHero(newest);
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        for (const item of rest) grid.appendChild(makeCard(item));
+        document.getElementById('empty-state').style.display = 'none';
+
+      } catch (e) {
+        console.error('Gallery load error:', e);
+        document.getElementById('empty-state').style.display = 'block';
+      }
+    }
+
+    // ── MQTT live updates ─────────────────────────────────────────────────────
+    function connectMQTT() {
+      setStatus('', 'connecting…');
+      const client = mqtt.connect(MQTT_BROKER, {
+        clientId:        CLIENT_ID,
+        clean:           true,
+        reconnectPeriod: 5000,
+      });
+      client.on('connect', () => {
+        setStatus('connected', 'live');
+        client.subscribe(GALLERY_TOPIC);
+      });
+      client.on('error',     () => setStatus('error', 'error'));
+      client.on('reconnect', () => setStatus('', 'reconnecting…'));
+      client.on('close',     () => setStatus('error', 'disconnected'));
+      client.on('message', (_topic, payload) => {
+        try {
+          const data = JSON.parse(payload.toString());
+          if (!data.ts) return;
+          // Use inline thumbnail for immediate display (image may not be committed yet)
+          const imgSrc = data.thumb
+            ? `data:image/jpeg;base64,${data.thumb}`
+            : `./cache/${data.ts}.jpg`;
+          pushNewImage({ ts: data.ts, meta: data.meta || {}, imgSrc });
+        } catch (_) {}
+      });
+    }
+
+    loadGallery().then(connectMQTT);
+  </script>
+</body>
+</html>

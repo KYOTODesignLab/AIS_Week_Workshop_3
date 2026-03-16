@@ -35,9 +35,10 @@ import cv2
 import numpy as np
 import paho.mqtt.client as mqtt
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory, Response, stream_with_context
 from flask_cors import CORS
 from PIL import Image
+import queue
 
 # ── Import AR pipeline from 01_Marker_Recognition ────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "01_Marker_Recognition"))
@@ -55,16 +56,72 @@ IG_TOKEN               = os.environ.get("IG_TOKEN",               "EAANpAC8CLA0B
 CLOUDINARY_CLOUD_NAME  = os.environ.get("CLOUDINARY_CLOUD_NAME",  "duiypvo1n")  # free at cloudinary.com
 CLOUDINARY_UPLOAD_PRESET = os.environ.get("CLOUDINARY_UPLOAD_PRESET", "mikodigi")  # unsigned upload preset
 
-MQTT_BROKER      = "broker.hivemq.com"
-MQTT_PORT        = 1883
-MQTT_TOPIC_IMG   = "ais-workshop/image"
-MQTT_TOPIC_CHUNK = "ais-workshop/chunk"
-MQTT_TOPIC_RES   = "ais-workshop/result"
-MQTT_TOPIC_ACK   = "ais-workshop/ack"
+MQTT_BROKER       = "broker.hivemq.com"
+MQTT_PORT         = 1883
+MQTT_TOPIC_IMG    = "ais-workshop/image"
+MQTT_TOPIC_CHUNK  = "ais-workshop/chunk"
+MQTT_TOPIC_RES    = "ais-workshop/result"
+MQTT_TOPIC_ACK    = "ais-workshop/ack"
+MQTT_TOPIC_GALLERY = "ais-workshop/gallery"
 
 IG_API = "https://graph.facebook.com/v19.0"
 
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+# ── Gallery helpers (index.json + MQTT thumbnail) ────────────────────────────
+_index_lock = threading.Lock()
+
+
+def _update_cache_index():
+    """Rebuild docs/cache/index.json from all .jpg files in CACHE_DIR (sorted asc)."""
+    index_path = os.path.join(CACHE_DIR, "index.json")
+    try:
+        timestamps = sorted(
+            os.path.splitext(f)[0]
+            for f in os.listdir(CACHE_DIR)
+            if f.endswith(".jpg")
+        )
+        with _index_lock:
+            with open(index_path, "w") as fh:
+                json.dump(timestamps, fh)
+    except Exception as e:
+        _log(f"index.json update error: {e}", "ERROR")
+
+
+def _make_thumb_b64(img_path: str, max_w: int = 600, quality: int = 72) -> str:
+    """Return base64-encoded JPEG thumbnail string, or empty string on error."""
+    try:
+        img = cv2.imread(img_path)
+        if img is None:
+            return ""
+        h, w = img.shape[:2]
+        if w > max_w:
+            scale = max_w / w
+            img = cv2.resize(img, (max_w, int(h * scale)), interpolation=cv2.INTER_AREA)
+        ok, buf = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, quality])
+        return base64.b64encode(buf).decode() if ok else ""
+    except Exception:
+        return ""
+
+
+# ── SSE gallery state ─────────────────────────────────────────────────────────
+_sse_clients: list = []
+_sse_lock    = threading.Lock()
+
+
+def _sse_broadcast(data: dict):
+    """Push a JSON event to all connected SSE gallery clients."""
+    payload = f"data: {json.dumps(data)}\n\n"
+    with _sse_lock:
+        dead = []
+        for q in _sse_clients:
+            try:
+                q.put_nowait(payload)
+            except queue.Full:
+                dead.append(q)
+        for q in dead:
+            _sse_clients.remove(q)
+
 
 # ── Logging helper ────────────────────────────────────────────────────────────
 
@@ -229,6 +286,14 @@ def _process_image(client, session_id, ts, img_path, json_path,
         }
         with open(json_path, "w") as f:
             json.dump(meta, f, indent=2)
+        _sse_broadcast({"ts": str(ts), "meta": meta})
+        _update_cache_index()
+        thumb = _make_thumb_b64(img_path)
+        client.publish(
+            MQTT_TOPIC_GALLERY,
+            json.dumps({"ts": str(ts), "meta": meta, "thumb": thumb})
+        )
+        _log(f"[{session_id}] Gallery update published (thumb {len(thumb)//1024} KB b64)", "PROC")
 
         # Build caption: full JSON, trimming excess detections if > 2000 chars
         IG_LIMIT = 2200
@@ -378,6 +443,65 @@ CORS(app)
 @app.get("/health")
 def health():
     return jsonify({"status": "ok"})
+
+
+@app.get("/cache/<path:filename>")
+def serve_cache(filename):
+    """Serve cached images and JSON files."""
+    return send_from_directory(CACHE_DIR, filename)
+
+
+@app.get("/gallery")
+def gallery_api():
+    """Return all cached image+metadata pairs sorted ascending by timestamp."""
+    items = []
+    try:
+        for fname in sorted(os.listdir(CACHE_DIR)):
+            if not fname.endswith(".json"):
+                continue
+            ts_str    = fname[:-5]
+            img_path  = os.path.join(CACHE_DIR, f"{ts_str}.jpg")
+            json_path = os.path.join(CACHE_DIR, fname)
+            if not os.path.exists(img_path):
+                continue
+            try:
+                with open(json_path) as f:
+                    meta = json.load(f)
+            except Exception:
+                meta = {}
+            items.append({"ts": ts_str, "meta": meta})
+    except Exception as e:
+        _log(f"Gallery list error: {e}", "ERROR")
+    return jsonify(items)
+
+
+@app.get("/gallery/events")
+def gallery_sse():
+    """Server-Sent Events stream — pushes {ts, meta} whenever a new image is processed."""
+    q: queue.Queue = queue.Queue(maxsize=20)
+    with _sse_lock:
+        _sse_clients.append(q)
+
+    def generate():
+        try:
+            yield 'data: {"status":"connected"}\n\n'
+            while True:
+                try:
+                    msg = q.get(timeout=30)
+                    yield msg
+                except queue.Empty:
+                    yield ": keepalive\n\n"
+        finally:
+            with _sse_lock:
+                try:
+                    _sse_clients.remove(q)
+                except ValueError:
+                    pass
+
+    resp = Response(stream_with_context(generate()), content_type="text/event-stream")
+    resp.headers["Cache-Control"]     = "no-cache"
+    resp.headers["X-Accel-Buffering"] = "no"
+    return resp
 
 
 if __name__ == "__main__":

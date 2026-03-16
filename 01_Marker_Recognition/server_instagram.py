@@ -1,7 +1,7 @@
 """
 server_instagram.py
 ───────────────────
-Upload an image via browser → run 4-marker detection (test_with_stream_normal)
+Upload an image via browser → run 4-marker detection (construct)
 → post the annotated result to Instagram.
 
 Setup
@@ -39,7 +39,7 @@ import requests as _requests
 from io import BytesIO
 from flask import Flask, render_template, request, jsonify, send_file
 
-from test_with_stream_normal import process_frame
+from construct import process_frame
 
 # ── Configuration ─────────────────────────────────────────────────────────────
 PORT = 5001

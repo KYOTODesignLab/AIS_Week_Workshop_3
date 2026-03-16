@@ -2,7 +2,7 @@
 process_folder.py
 ─────────────────
 Batch-process every image inside the  'to_process'  folder using the full
-AR pipeline defined in test_with_stream_normal.py and save the annotated
+AR pipeline defined in construct.py and save the annotated
 results to the  'processed'  folder at maximum quality.
 
 Quality strategy
@@ -35,7 +35,7 @@ except ImportError:
     _HEIF_AVAILABLE = False
 
 # Import shared state and pipeline pieces from the existing module -------------
-from test_with_stream_normal import detector, config, SCENE, SCENE_ALPHA
+from construct import detector, config, SCENE, SCENE_ALPHA
 from interpreter import BaseFrame, Renderer
 
 # ── Enhancement stages ─────────────────────────────────────────────────────────

@@ -6,7 +6,7 @@ from compas.datastructures import Mesh
 from compas.geometry import Box, Frame, Point, Torus, Vector
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from geometry_surface_model import CubeSurface
+from geometry_surface_model import CubeSurface, Sudare
 
 _TEXTURE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "elements", "textures", "leopard_texture.jpg")
@@ -367,6 +367,41 @@ class PlacedMesh:
         return self.vertices * self.scale + self.offset
 
 
+class PlacedSudare:
+    """Place a Sudare (screen) geometry model in the AR scene.
+
+    The Sudare is positioned so that its centre aligns with the world_point
+    of the *anchor* marker.  All Sudare constructor parameters are forwarded
+    directly; *offset* provides an additional (dx, dy, dz) translation in
+    world units.
+    """
+
+    def __init__(self, width=2.0, depth=1.0, height=2.0, direction='x',
+                 rows=1, levels=6, row_spacing=None, active_levels=None,
+                 rot_z_deg=45., radius=0.1, half_side=0.1,
+                 n_segs=40, divided=True, gap=0.01,
+                 offset: tuple = (0., 0., 0.),
+                 anchor: str = None):
+        self.model  = Sudare(width=width, depth=depth, height=height,
+                             direction=direction, rows=rows, levels=levels,
+                             row_spacing=row_spacing, active_levels=active_levels,
+                             rot_z_deg=rot_z_deg, radius=radius,
+                             half_side=half_side, n_segs=n_segs,
+                             divided=divided, gap=gap)
+        self.offset = np.array(offset, dtype=float)
+        self.anchor = anchor
+
+    def world_polygons(self, anchor_offset=None):
+        """Return (disc_polys, square_polys) translated by anchor + offset."""
+        dx = (anchor_offset.x if anchor_offset else 0.) + self.offset[0]
+        dy = (anchor_offset.y if anchor_offset else 0.) + self.offset[1]
+        dz = (anchor_offset.z if anchor_offset else 0.) + self.offset[2]
+        shift  = np.array([dx, dy, dz])
+        discs   = [p + shift for p in self.model.disc_polygons()]
+        squares = [p + shift for p in self.model.square_polygons()]
+        return discs, squares
+
+
 class PlacedCubeSurface:
     """Place a CubeSurface geometry model in the AR scene."""
 
@@ -410,6 +445,22 @@ class Scene:
                  offset: tuple = (0., 0., 0.)) -> PlacedMesh:
         """Place an OBJ mesh in the scene at a fixed world offset."""
         shape = PlacedMesh(filepath=filepath, scale=scale, offset=offset)
+        self.shapes.append(shape)
+        return shape
+
+    def add_sudare(self, width=2.0, depth=1.0, height=2.0, direction='x',
+                   rows=1, levels=6, row_spacing=None, active_levels=None,
+                   rot_z_deg=45., radius=0.1, half_side=0.1,
+                   n_segs=40, divided=True, gap=0.01,
+                   offset: tuple = (0., 0., 0.),
+                   anchor: str = None) -> PlacedSudare:
+        """Place a Sudare screen in the scene, optionally anchored to a marker."""
+        shape = PlacedSudare(width=width, depth=depth, height=height,
+                             direction=direction, rows=rows, levels=levels,
+                             row_spacing=row_spacing, active_levels=active_levels,
+                             rot_z_deg=rot_z_deg, radius=radius,
+                             half_side=half_side, n_segs=n_segs,
+                             divided=divided, gap=gap, offset=offset, anchor=anchor)
         self.shapes.append(shape)
         return shape
 
@@ -460,6 +511,21 @@ class Renderer:
                 anchor_offset = None
             modifiers   = anchor_marker.modifiers if anchor_marker is not None else []
             use_texture = "heart" in {m.name for m in modifiers} and self._texture is not None
+
+            # ── PlacedSudare: project polygons anchored to marker world point ─────
+            if isinstance(shape, PlacedSudare):
+                discs, squares = shape.world_polygons(anchor_offset=anchor_offset)
+                for poly in discs:
+                    pts2d = self.marker_frame.project(poly)
+                    cam_z = (poly @ R.T + t)[:, 2]
+                    pts_i = pts2d[:, 0, :].astype(np.int32)
+                    all_faces.append((cam_z.mean(), pts_i, False, None, (225, 105, 65)))
+                for poly in squares:
+                    pts2d = self.marker_frame.project(poly)
+                    cam_z = (poly @ R.T + t)[:, 2]
+                    pts_i = pts2d[:, 0, :].astype(np.int32)
+                    all_faces.append((cam_z.mean(), pts_i, False, None, (0, 140, 255)))
+                continue
 
             # ── PlacedCubeSurface: project polygons directly ──────────────────
             if isinstance(shape, PlacedCubeSurface):

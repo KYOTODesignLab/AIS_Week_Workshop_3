@@ -42,7 +42,7 @@ import queue
 
 # ── Import AR pipeline from 01_Marker_Recognition ────────────────────────────
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "01_Marker_Recognition"))
-from test_with_stream_normal import process_frame, model  # noqa: E402
+from construct import process_frame, model  # noqa: E402
 
 # ── Config ────────────────────────────────────────────────────────────────────
 

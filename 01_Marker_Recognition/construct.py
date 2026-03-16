@@ -20,12 +20,34 @@ config = MarkerConfig(
     y_label="yama",
     corner_label="kamogawa",
     dist=1.0,
-    geometry_labels=["sunlight, river, mountain"],
-    modifier_labels=["many, big"],
+    geometry_labels=["sunlight", "river", "mountain"],
+    modifier_labels=["many", "big"],
 )
 
 #__________________________ designate mesh file for 3D model __________________________
 mesh_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "elements", "models", "20260315_AIS_Roof_Lowpoly.obj")
+
+# Shared size constant — used by both CubeSurface and Sudare height
+CUBE_SIZE = 1.0
+
+# ── Confidence → active Sudare levels mapping ─────────────────────────────────
+# ≤ 0.6 confidence → 1 level; ≥ 0.9 → 6 levels; linear in between
+
+def _conf_to_levels(conf: float) -> int:
+    if conf <= 0.6:
+        return 1
+    if conf >= 0.9:
+        return 6
+    t = (conf - 0.6) / 0.3
+    return max(1, min(6, round(1 + t * 5)))
+
+
+# Per-geometry-marker Sudare rotation (rot_z_deg rotates surface elements around Z)
+_SUDARE_PARAMS = {
+    "river":    {"rot_z_deg": 0.},
+    "mountain": {"rot_z_deg": 90.},
+    "sunlight": {"rot_z_deg": 45.},
+}
 
 
 model    = YOLO(_path)
@@ -39,7 +61,7 @@ detector = MarkerDetector(model, config)
 def build_scene() -> Scene:
     scene = Scene()
     scene.add_mesh(filepath=mesh_file, scale=1.0, offset=(0.5, 0.5, 0.))
-    scene.add_cube_surface(cube_size=1.0, offset=(0.5, 0.5,0.0))
+    scene.add_cube_surface(cube_size=CUBE_SIZE, offset=(0.5, 0.5, 0.0))
     # scene.add_box(size=0.3)
     return scene
 
@@ -67,13 +89,25 @@ def process_frame(frame: np.ndarray) -> np.ndarray:
     # Step 2 — build the abstract coordinate frame from detected markers
     plane = BaseFrame(markers, K, config=config)
 
-    # Step 3 — geometry lives in SCENE (defined above)
+    # Step 3 — build per-frame scene: static shapes + dynamic Sudare
+    scene = Scene()
+    for shape in SCENE.shapes:        # reuse static mesh / cube_surface
+        scene.shapes.append(shape)
+    for m in markers:
+        if m.role_type == "geometry" and m.name in _SUDARE_PARAMS:
+            scene.add_sudare(
+                width=CUBE_SIZE, depth=CUBE_SIZE, height=CUBE_SIZE,
+                active_levels=_conf_to_levels(m.confidence),
+                offset=(0., 0., CUBE_SIZE / 2.),   # sit above the marker plane
+                anchor=m.name,
+                **_SUDARE_PARAMS[m.name],
+            )
 
     # Step 4 — project and render
     renderer = Renderer(plane)
     renderer.draw_marker_dots(annotated)
     renderer.draw_axes(annotated)
-    renderer.draw_scene(annotated, SCENE, alpha=SCENE_ALPHA)
+    renderer.draw_scene(annotated, scene, alpha=SCENE_ALPHA)
     renderer.draw_missing_warning(annotated)
 
     return annotated
@@ -128,10 +162,10 @@ def process_images(paths: list[str], save_dir: str | None = None) -> None:
 
 # ── Standalone entry point ────────────────────────────────────────────────────
 # Usage:
-#   python test_with_stream_normal.py                      → webcam
-#   python test_with_stream_normal.py image.jpg            → single image
-#   python test_with_stream_normal.py images/              → all images in folder
-#   python test_with_stream_normal.py images/ --save out/  → process & save
+#   python construct.py                      → webcam
+#   python construct.py image.jpg            → single image
+#   python construct.py images/              → all images in folder
+#   python construct.py images/ --save out/  → process & save
 
 if __name__ == "__main__":
     args = sys.argv[1:]

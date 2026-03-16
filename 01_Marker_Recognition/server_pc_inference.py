@@ -21,7 +21,7 @@ import cv2
 import numpy as np
 from flask import Flask, render_template, render_template_string, request, send_from_directory, jsonify
 from flask_socketio import SocketIO, emit
-from test_with_stream_normal import process_frame
+from construct import process_frame
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -304,7 +304,7 @@ def on_frame(data: str):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    # The YOLO model is loaded automatically when test_with_stream_normal is imported.
+    # The YOLO model is loaded automatically when construct is imported.
 
     ip = get_local_ip()
     cert_file, key_file = ensure_ssl_cert(ip)

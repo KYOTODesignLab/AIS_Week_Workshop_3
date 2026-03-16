@@ -14,11 +14,15 @@ import os
 import socket
 import base64
 import threading
+import queue
 import webbrowser
 import qrcode
 from io import BytesIO
 import cv2
 import numpy as np
+import eventlet
+import eventlet.wsgi
+eventlet.monkey_patch()
 from flask import Flask, render_template, render_template_string, request, send_from_directory, jsonify
 from flask_socketio import SocketIO, emit
 from construct import process_frame
@@ -33,7 +37,7 @@ PORT = 5000
 # ---------------------------------------------------------------------------
 app = Flask(__name__, template_folder="templates")
 app.config["SECRET_KEY"] = os.urandom(24).hex()
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 # ---------------------------------------------------------------------------
 # State
@@ -41,6 +45,31 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 active_cameras: set = set()
 cameras_lock = threading.Lock()
 SERVER_URL = ""   # set at startup
+
+# Max width for inference — smaller = faster YOLO + rendering, at cost of detail
+INFER_WIDTH = 960
+
+# Single-slot queue: always holds the latest unprocessed frame only.
+# Producer (on_frame) replaces the slot; consumer (worker) drains it.
+_frame_queue: queue.Queue = queue.Queue(maxsize=1)
+
+
+def _inference_worker():
+    """Persistent background thread: pull latest frame, run inference, emit."""
+    while True:
+        frame = _frame_queue.get()   # blocks until a frame arrives
+        try:
+            annotated = process_frame(frame)
+            _, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 75])
+            out_uri = "data:image/jpeg;base64," + base64.b64encode(buf).decode()
+            socketio.emit("processed_frame", out_uri)
+            socketio.emit("stream_status", {"active": True})
+        except Exception as exc:
+            print(f"[worker] inference error: {exc}")
+
+
+_worker_thread = threading.Thread(target=_inference_worker, daemon=True)
+_worker_thread.start()
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -275,12 +304,12 @@ def on_disconnect():
 
 @socketio.on("frame")
 def on_frame(data: str):
-    """Receive a raw JPEG frame from the phone, run marker interpretation on the PC,
-    and broadcast the annotated frame to all display clients."""
+    """Receive a raw JPEG frame from the phone and hand it to the worker thread.
+    Returns immediately so Socket.IO is never blocked by inference."""
     with cameras_lock:
         active_cameras.add(request.sid)
 
-    # Decode base64 data URI → numpy array
+    # Decode
     _, b64data = data.split(",", 1)
     jpg_bytes = base64.b64decode(b64data)
     arr = np.frombuffer(jpg_bytes, dtype=np.uint8)
@@ -288,15 +317,19 @@ def on_frame(data: str):
     if frame is None:
         return
 
-    # Run marker interpretation (YOLO + 3-D overlay) via the shared module
-    annotated = process_frame(frame)
+    # Downscale for faster inference (process_frame rebuilds K from frame dims)
+    h, w = frame.shape[:2]
+    if w > INFER_WIDTH:
+        scale = INFER_WIDTH / w
+        frame = cv2.resize(frame, (INFER_WIDTH, int(h * scale)), interpolation=cv2.INTER_AREA)
 
-    # Re-encode to JPEG data URI and broadcast
-    _, buf = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 80])
-    out_uri = "data:image/jpeg;base64," + base64.b64encode(buf).decode()
-
-    socketio.emit("processed_frame", out_uri)
-    socketio.emit("stream_status", {"active": True})
+    # Drop the previous queued frame if the worker hasn't consumed it yet,
+    # then enqueue the latest one (always process the newest frame).
+    try:
+        _frame_queue.get_nowait()
+    except queue.Empty:
+        pass
+    _frame_queue.put(frame)
 
 
 # ---------------------------------------------------------------------------
@@ -336,9 +369,15 @@ if __name__ == "__main__":
 
     threading.Timer(1.5, lambda: open_local_browser(local_url)).start()
 
-    kwargs = dict(host="0.0.0.0", port=PORT, debug=False, use_reloader=False,
-                  allow_unsafe_werkzeug=True)
     if use_ssl:
-        kwargs["ssl_context"] = (cert_file, key_file)
-
-    socketio.run(app, **kwargs)
+        # eventlet requires an SSL-wrapped listener socket rather than ssl_context=
+        listener = eventlet.listen(("0.0.0.0", PORT))
+        listener = eventlet.wrap_ssl(
+            listener,
+            certfile=cert_file,
+            keyfile=key_file,
+            server_side=True,
+        )
+        eventlet.wsgi.server(listener, app)
+    else:
+        socketio.run(app, host="0.0.0.0", port=PORT, debug=False, use_reloader=False)

@@ -366,10 +366,12 @@ class PlacedMesh:
     """
 
     def __init__(self, filepath: str = None, scale: float = 1.0,
-                 offset: tuple = (0., 0., 0.)):
-        self.filepath = filepath or _MODEL_PATH
-        self.scale    = scale
-        self.offset   = np.array(offset, dtype=float)
+                 offset: tuple = (0., 0., 0.),
+                 transform=None):
+        self.filepath  = filepath or _MODEL_PATH
+        self.scale     = scale
+        self.offset    = np.array(offset, dtype=float)
+        self.transform = np.array(transform, dtype=float) if transform is not None else None
         self.vertices, self.faces = self._load()
 
     def _load(self):
@@ -392,8 +394,9 @@ class PlacedMesh:
         return np.array(verts, dtype=np.float64), faces
 
     def world_vertices(self):
-        """Return scaled + translated vertices as ndarray (N, 3)."""
-        return self.vertices * self.scale + self.offset
+        """Return transformed, scaled + translated vertices as ndarray (N, 3)."""
+        verts = self.vertices @ self.transform.T if self.transform is not None else self.vertices
+        return verts * self.scale + self.offset
 
 
 class PlacedSudare:
@@ -471,9 +474,10 @@ class Scene:
         return shape
 
     def add_mesh(self, filepath: str = None, scale: float = 1.0,
-                 offset: tuple = (0., 0., 0.)) -> PlacedMesh:
+                 offset: tuple = (0., 0., 0.),
+                 transform=None) -> PlacedMesh:
         """Place an OBJ mesh in the scene at a fixed world offset."""
-        shape = PlacedMesh(filepath=filepath, scale=scale, offset=offset)
+        shape = PlacedMesh(filepath=filepath, scale=scale, offset=offset, transform=transform)
         self.shapes.append(shape)
         return shape
 

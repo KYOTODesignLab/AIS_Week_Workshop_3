@@ -63,13 +63,103 @@ detector = MarkerDetector(model, config)
 
 def build_scene() -> Scene:
     scene = Scene()
-    scene.add_mesh(filepath=mesh_file, scale=1.0, offset=(0.5, 0.5, 0.))
-    scene.add_cube_surface(cube_size=CUBE_SIZE, offset=(0.5, 0.5, 0.0))
+    # The OBJ was exported from a Y-up (Rhino) coordinate system, centred at
+    # roughly (299.5, 2.1, -299.5).  We remap axes OBJ(x,y,z)→world(x,−z,y)
+    # so the roof sits above the marker plane (world Z = up), then scale to fit
+    # within the 1×1 unit marker frame and shift the centroid to (0.5, 0.5, 0).
+    #   scale  ≈ 1 / mesh_span  = 1 / 2.571 ≈ 0.389
+    #   offset = target_centre − scaled_centre
+    _T = np.array([[1, 0,  0],   # OBJ x  → world x
+                   [0, 0, -1],   # OBJ z (negated) → world y
+                   [0, 1,  0]],  # OBJ y  → world z (up)
+                  dtype=float)
+    _s  = 1
+    _ox = 0.5  - 299.5 * _s   # ≈ -116.0
+    _oy = 0.5  - 299.5 * _s   # ≈ -116.0  (−OBJ_z centre)
+    _oz = 1.3  - 1.5625 * _s  # ≈ -0.608  (floor of mesh at z = 0)
+    scene.add_mesh(filepath=mesh_file, scale=_s, offset=(_ox, _oy, _oz), transform=_T)
+    scene.add_cube_surface(cube_size=CUBE_SIZE, offset=(0.5, 0.5, 0.5))
     # scene.add_box(size=0.3)
     return scene
 
 SCENE = build_scene()
 SCENE_ALPHA = 0.45   # 0.0 = fully transparent  ·  1.0 = fully opaque
+
+# ── Temporal smoothers ────────────────────────────────────────────────────────
+# Both operate as exponential moving averages (EMA):
+#   new_value = old_value + alpha * (raw_value - old_value)
+# alpha=1.0 → no smoothing; lower values → more smoothing but slower response.
+
+_DETECT_ALPHA = 0.45   # smoothing of 2-D detection centres between frames
+_POSE_ALPHA   = 0.35   # smoothing of rvec / tvec between frames
+_MAX_DET_AGE  = 8      # frames before a missing marker's smoothed position expires
+
+
+class _DetectionSmoother:
+    """EMA on per-label 2-D detection centres.  Only updates markers that YOLO
+    actually detected this frame — does NOT inject phantom markers."""
+
+    def __init__(self, alpha: float = _DETECT_ALPHA, max_age: int = _MAX_DET_AGE):
+        self.alpha   = alpha
+        self.max_age = max_age
+        self._pts: dict  = {}   # label → smoothed (cx, cy)
+        self._age: dict  = {}   # label → frames since last seen
+
+    def update(self, markers: list) -> list:
+        # Age every known label; evict stale ones
+        for k in list(self._age):
+            self._age[k] += 1
+            if self._age[k] > self.max_age:
+                self._pts.pop(k, None)
+                del self._age[k]
+        # Smooth each detected marker's image point
+        for m in markers:
+            cx, cy = m.image_point
+            if m.name in self._pts:
+                ex, ey = self._pts[m.name]
+                cx = ex + self.alpha * (cx - ex)
+                cy = ey + self.alpha * (cy - ey)
+            self._pts[m.name] = (cx, cy)
+            self._age[m.name] = 0
+            m.image_point = (cx, cy)
+        return markers
+
+
+class _PoseSmoother:
+    """EMA on rvec / tvec.  When the current frame is invalid (too few markers)
+    the last valid pose is held so the overlay does not flash out."""
+
+    def __init__(self, alpha: float = _POSE_ALPHA):
+        self.alpha   = alpha
+        self._rvec   = None
+        self._tvec   = None
+
+    def update(self, frame: BaseFrame) -> None:
+        if not frame.valid:
+            # Replay the last good pose so the renderer still has something
+            if self._rvec is not None:
+                frame.valid         = True
+                frame.rvec          = self._rvec.copy()
+                frame.tvec          = self._tvec.copy()
+                frame._R_mat, _     = cv2.Rodrigues(frame.rvec)
+                frame._tvec_ravel   = frame.tvec.ravel()
+            return
+        r = frame.rvec.ravel()
+        t = frame.tvec.ravel()
+        if self._rvec is None:
+            self._rvec = r.copy()
+            self._tvec = t.copy()
+        else:
+            self._rvec += self.alpha * (r - self._rvec)
+            self._tvec += self.alpha * (t - self._tvec)
+        frame.rvec         = self._rvec.reshape(3, 1)
+        frame.tvec         = self._tvec.reshape(3, 1)
+        frame._R_mat, _    = cv2.Rodrigues(frame.rvec)
+        frame._tvec_ravel  = self._tvec.copy()
+
+
+_det_smoother  = _DetectionSmoother()
+_pose_smoother = _PoseSmoother()
 
 # ── Core processing function ──────────────────────────────────────────────────
 
@@ -89,8 +179,14 @@ def process_frame(frame: np.ndarray) -> np.ndarray:
     markers = detector.detect(frame)
     detector.draw_detections(annotated)
 
+    # Smooth raw 2-D detection centres before handing them to solvePnP
+    markers = _det_smoother.update(markers)
+
     # Step 2 — build the abstract coordinate frame from detected markers
     plane = BaseFrame(markers, K, config=config)
+
+    # Smooth rvec / tvec across frames; hold last valid pose when markers drop out
+    _pose_smoother.update(plane)
 
     # Step 3 — build per-frame scene: static shapes + dynamic Sudare
     scene = Scene()

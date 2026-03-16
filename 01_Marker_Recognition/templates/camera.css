@@ -128,3 +128,32 @@ body {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
 }
+
+/* ── Lens switch button ──────────────────────────────────────── */
+#lens-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: none;           /* shown via JS once multiple cameras found */
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  touch-action: manipulation;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+#lens-btn:active {
+  background: rgba(255, 255, 255, 0.2);
+}

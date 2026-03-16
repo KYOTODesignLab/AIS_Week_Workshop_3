@@ -156,15 +156,7 @@
       display: none;
     }
 
-    #crop-btn {
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.4);
-      bottom: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 32px;
-      height: 32px;
-    }
+
   </style>
 </head>
 <body>
@@ -180,7 +172,6 @@
   <canvas id="canvas"></canvas>
 
   <button id="capture-btn" class="fab"></button>
-  <button id="crop-btn"    class="fab"></button>
   <button id="send-btn"    class="fab"></button>
 
   <script>
@@ -189,7 +180,6 @@
     const canvas     = document.getElementById('canvas');
     const captureBtn = document.getElementById('capture-btn');
     const sendBtn    = document.getElementById('send-btn');
-    const cropBtn    = document.getElementById('crop-btn');
     const cropGuide  = document.getElementById('crop-guide');
 
     let cropMode = 'square';
@@ -218,9 +208,12 @@
     sizeCropGuide();
     window.addEventListener('resize', sizeCropGuide);
 
-    cropBtn.addEventListener('click', () => {
+    // Tap the live preview to cycle aspect ratio (only when not in still mode)
+    preview.addEventListener('click', () => {
+      if (inStill) return;
       cropMode = cropMode === 'square' ? 'portrait' : 'square';
       sizeCropGuide();
+      showMessage(cropMode === 'square' ? 'crop: square' : 'crop: portrait (4:3)');
     });
 
     // Lock to portrait where supported (installed PWA / fullscreen on Android)

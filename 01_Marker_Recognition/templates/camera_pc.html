@@ -25,6 +25,7 @@
   <div id="preview-wrap">
     <video id="preview" autoplay playsinline muted></video>
     <canvas id="send-canvas"></canvas>
+    <button id="lens-btn" title="Switch lens">⊙</button>
 
     <div id="overlay">
       <h2 id="overlay-title">Starting camera…</h2>
@@ -41,13 +42,17 @@
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <script>
     // ── Config ────────────────────────────────────────────────────
-    const SEND_EVERY_MS = 100;   // max 10 fps to server
+    const SEND_EVERY_MS = 50;    // send up to 20 fps; server worker throttles naturally
+    const SEND_WIDTH    = 640;   // downscale before sending to reduce network + decode cost
 
     // ── State ─────────────────────────────────────────────────────
-    let streaming   = false;
-    let lastSendTs  = 0;
-    let sendLock    = false;
-    let framesSent  = 0;
+    let streaming        = false;
+    let lastSendTs       = 0;
+    let framesSent       = 0;
+    let videoDevices     = [];
+    let currentDeviceIdx = 0;
+    let fpsTimerStarted  = false;
+    let loopStarted      = false;
 
     // ── Elements ──────────────────────────────────────────────────
     const video       = document.getElementById('preview');
@@ -59,6 +64,7 @@
     const statusLabel = document.getElementById('status-label');
     const fpsLabel    = document.getElementById('fps-label');
     const sslBanner   = document.getElementById('ssl-banner');
+    const lensBtn     = document.getElementById('lens-btn');
 
     // ── Socket.IO ─────────────────────────────────────────────────
     const socket = io({ transports: ['websocket'] });
@@ -71,7 +77,7 @@
     }
 
     // ── Camera ────────────────────────────────────────────────────
-    async function startCamera() {
+    async function startCamera(deviceId = null) {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error(
@@ -79,10 +85,10 @@
             'Accept the SSL certificate warning first (tap Advanced → Proceed), then reload.'
           );
         }
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
+        const videoConstraints = deviceId
+          ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } };
+        const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
         video.srcObject = stream;
         await new Promise(res => { video.onloadedmetadata = res; });
         overlayEl.classList.add('hidden');
@@ -90,11 +96,27 @@
         streaming = true;
         setStatus('streaming', 'Streaming to server…');
 
-        setInterval(() => {
-          if (streaming) { fpsLabel.textContent = `${framesSent} fps`; framesSent = 0; }
-        }, 1000);
+        // Enumerate cameras once after permission is granted
+        if (videoDevices.length === 0) {
+          const allDevices = await navigator.mediaDevices.enumerateDevices();
+          videoDevices = allDevices.filter(d => d.kind === 'videoinput');
+          const activeId = stream.getVideoTracks()[0]?.getSettings()?.deviceId;
+          currentDeviceIdx = videoDevices.findIndex(d => d.deviceId === activeId);
+          if (currentDeviceIdx === -1) currentDeviceIdx = 0;
+          if (videoDevices.length > 1) lensBtn.style.display = 'flex';
+        }
 
-        requestAnimationFrame(sendLoop);
+        if (!fpsTimerStarted) {
+          fpsTimerStarted = true;
+          setInterval(() => {
+            if (streaming) { fpsLabel.textContent = `${framesSent} fps`; framesSent = 0; }
+          }, 1000);
+        }
+
+        if (!loopStarted) {
+          loopStarted = true;
+          requestAnimationFrame(sendLoop);
+        }
       } catch (err) {
         overlayTitle.textContent = 'Camera access denied';
         overlaySub.textContent   = err.message;
@@ -102,21 +124,36 @@
       }
     }
 
+    // ── Lens switching ────────────────────────────────────────────
+    async function switchLens() {
+      if (videoDevices.length < 2) return;
+      currentDeviceIdx = (currentDeviceIdx + 1) % videoDevices.length;
+      streaming = false;
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+      }
+      await startCamera(videoDevices[currentDeviceIdx].deviceId);
+    }
+
+    lensBtn.addEventListener('click', switchLens);
+
     // ── Send raw frame to server (PC runs YOLO) ───────────────────
     function sendLoop() {
       const now = Date.now();
       if (
-        streaming && socket.connected && !sendLock &&
+        streaming && socket.connected &&
         now - lastSendTs >= SEND_EVERY_MS &&
         video.readyState >= 2 && video.videoWidth > 0
       ) {
         lastSendTs = now;
         const vw = video.videoWidth, vh = video.videoHeight;
-        sendCanvas.width = vw; sendCanvas.height = vh;
-        sendCanvas.getContext('2d').drawImage(video, 0, 0);
-        sendLock = true;
-        socket.emit('frame', sendCanvas.toDataURL('image/jpeg', 0.72), () => { sendLock = false; });
-        setTimeout(() => { sendLock = false; }, 500);
+        // Downscale to SEND_WIDTH to reduce network + server decode cost
+        const scale = Math.min(1.0, SEND_WIDTH / vw);
+        const sw = Math.round(vw * scale), sh = Math.round(vh * scale);
+        sendCanvas.width = sw; sendCanvas.height = sh;
+        sendCanvas.getContext('2d').drawImage(video, 0, 0, sw, sh);
+        socket.emit('frame', sendCanvas.toDataURL('image/jpeg', 0.70));
         framesSent++;
       }
       requestAnimationFrame(sendLoop);
@@ -124,6 +161,7 @@
 
     // ── Boot ──────────────────────────────────────────────────────
     if (location.protocol === 'https:') sslBanner.style.display = 'block';
+    lensBtn.style.display = 'none';
     startCamera();
   </script>
 </body>

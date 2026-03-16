@@ -26,6 +26,7 @@
     <video id="preview" autoplay playsinline muted></video>
     <canvas id="overlay-canvas"></canvas>
     <canvas id="send-canvas"></canvas>
+    <button id="lens-btn" title="Switch lens">⊙</button>
 
     <div id="overlay">
       <h2 id="overlay-title">Loading model…</h2>
@@ -53,11 +54,15 @@
     let inputName   = 'images';
     let outputName  = 'output0';
     let classNames  = [];
-    let streaming   = false;
-    let inferencing = false;
-    let lastSendTs  = 0;
-    let sendLock    = false;
-    let framesSent  = 0;
+    let streaming        = false;
+    let inferencing      = false;
+    let lastSendTs       = 0;
+    let sendLock         = false;
+    let framesSent       = 0;
+    let videoDevices     = [];
+    let currentDeviceIdx = 0;
+    let fpsTimerStarted  = false;
+    let loopStarted      = false;
 
     // ── Elements ──────────────────────────────────────────────────
     const video         = document.getElementById('preview');
@@ -71,6 +76,7 @@
     const statusLabel   = document.getElementById('status-label');
     const fpsLabel      = document.getElementById('fps-label');
     const sslBanner     = document.getElementById('ssl-banner');
+    const lensBtn       = document.getElementById('lens-btn');
 
     // ── Socket.IO ─────────────────────────────────────────────────
     const socket = io({ transports: ['websocket'] });
@@ -119,7 +125,7 @@
     }
 
     // ── Camera ────────────────────────────────────────────────────
-    async function startCamera() {
+    async function startCamera(deviceId = null) {
       try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
           throw new Error(
@@ -127,10 +133,10 @@
             'Accept the SSL certificate warning first (tap Advanced → Proceed), then reload.'
           );
         }
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
+        const videoConstraints = deviceId
+          ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } };
+        const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
         video.srcObject = stream;
         await new Promise(res => { video.onloadedmetadata = res; });
         overlayEl.classList.add('hidden');
@@ -138,17 +144,47 @@
         streaming = true;
         setStatus('streaming', 'Running on-device inference…');
 
-        setInterval(() => {
-          if (streaming) { fpsLabel.textContent = `${framesSent} fps`; framesSent = 0; }
-        }, 1000);
+        // Enumerate cameras once after permission is granted
+        if (videoDevices.length === 0) {
+          const allDevices = await navigator.mediaDevices.enumerateDevices();
+          videoDevices = allDevices.filter(d => d.kind === 'videoinput');
+          const activeId = stream.getVideoTracks()[0]?.getSettings()?.deviceId;
+          currentDeviceIdx = videoDevices.findIndex(d => d.deviceId === activeId);
+          if (currentDeviceIdx === -1) currentDeviceIdx = 0;
+          if (videoDevices.length > 1) lensBtn.style.display = 'flex';
+        }
 
-        requestAnimationFrame(inferenceLoop);
+        if (!fpsTimerStarted) {
+          fpsTimerStarted = true;
+          setInterval(() => {
+            if (streaming) { fpsLabel.textContent = `${framesSent} fps`; framesSent = 0; }
+          }, 1000);
+        }
+
+        if (!loopStarted) {
+          loopStarted = true;
+          requestAnimationFrame(inferenceLoop);
+        }
       } catch (err) {
         overlayTitle.textContent = 'Camera access denied';
         overlaySub.textContent   = err.message;
         setStatus('error', 'Camera error: ' + err.name);
       }
     }
+
+    // ── Lens switching ────────────────────────────────────────────
+    async function switchLens() {
+      if (videoDevices.length < 2) return;
+      currentDeviceIdx = (currentDeviceIdx + 1) % videoDevices.length;
+      streaming = false;
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+        video.srcObject = null;
+      }
+      await startCamera(videoDevices[currentDeviceIdx].deviceId);
+    }
+
+    lensBtn.addEventListener('click', switchLens);
 
     // ── Preprocessing: video frame → Float32 NCHW tensor ─────────
     function preprocess() {
@@ -343,6 +379,7 @@
 
     // ── Boot ──────────────────────────────────────────────────────
     if (location.protocol === 'https:') sslBanner.style.display = 'block';
+    lensBtn.style.display = 'none';
     loadModel();
   </script>
 </body>

@@ -30,15 +30,18 @@ mesh_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "elements",
 # Shared size constant — used by both CubeSurface and Sudare height
 CUBE_SIZE = 1.0
 
+# Minimum confidence threshold — detections below this render 1 Sudare level
+MIN_CONFIDENCE = 0.7
+
 # ── Confidence → active Sudare levels mapping ─────────────────────────────────
 # ≤ 0.6 confidence → 1 level; ≥ 0.9 → 6 levels; linear in between
 
 def _conf_to_levels(conf: float) -> int:
-    if conf <= 0.6:
+    if conf <= MIN_CONFIDENCE:
         return 1
     if conf >= 0.9:
         return 6
-    t = (conf - 0.6) / 0.3
+    t = (conf - MIN_CONFIDENCE) / (0.9 - MIN_CONFIDENCE)
     return max(1, min(6, round(1 + t * 5)))
 
 

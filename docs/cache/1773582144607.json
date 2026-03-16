@@ -1,0 +1,138 @@
+{
+  "timestamp": 1773582144607,
+  "session_id": "u3vi0gmnv2mmrt0b4d",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.04943637549634,
+    "longitude": 135.78302426791328,
+    "accuracy": 12.98905232327881
+  },
+  "orientation": {
+    "alpha": 5.82,
+    "beta": 48.33,
+    "gamma": -5.98
+  },
+  "detections": [
+    {
+      "label": "sunlight",
+      "confidence": 0.943,
+      "box": {
+        "x1": 1965,
+        "y1": 1707,
+        "x2": 2061,
+        "y2": 1780
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.888,
+      "box": {
+        "x1": 97,
+        "y1": 1590,
+        "x2": 306,
+        "y2": 1704
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.553,
+      "box": {
+        "x1": 501,
+        "y1": 2143,
+        "x2": 669,
+        "y2": 2260
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.539,
+      "box": {
+        "x1": 128,
+        "y1": 1930,
+        "x2": 300,
+        "y2": 2074
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.514,
+      "box": {
+        "x1": 1955,
+        "y1": 1902,
+        "x2": 2090,
+        "y2": 2020
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.508,
+      "box": {
+        "x1": 1828,
+        "y1": 1473,
+        "x2": 2022,
+        "y2": 1670
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.433,
+      "box": {
+        "x1": 1155,
+        "y1": 2480,
+        "x2": 1280,
+        "y2": 2594
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.413,
+      "box": {
+        "x1": 1647,
+        "y1": 2211,
+        "x2": 1763,
+        "y2": 2341
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.347,
+      "box": {
+        "x1": 62,
+        "y1": 1511,
+        "x2": 157,
+        "y2": 1577
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.323,
+      "box": {
+        "x1": 1955,
+        "y1": 1902,
+        "x2": 2091,
+        "y2": 2020
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.275,
+      "box": {
+        "x1": 1442,
+        "y1": 2373,
+        "x2": 1482,
+        "y2": 2435
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.261,
+      "box": {
+        "x1": 1371,
+        "y1": 0,
+        "x2": 1463,
+        "y2": 75
+      }
+    }
+  ]
+}

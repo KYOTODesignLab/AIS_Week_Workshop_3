@@ -1,0 +1,144 @@
+{
+  "timestamp": 1773634467912,
+  "session_id": "a7nv8x3mp8rmmsntr3m",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": {
+    "alpha": 256.67,
+    "beta": 55.25,
+    "gamma": -2.56
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.639,
+      "box": {
+        "x1": 1754,
+        "y1": 2169,
+        "x2": 2089,
+        "y2": 2398
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.536,
+      "box": {
+        "x1": 71,
+        "y1": 1275,
+        "x2": 310,
+        "y2": 1429
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.478,
+      "box": {
+        "x1": 1335,
+        "y1": 2352,
+        "x2": 1591,
+        "y2": 2547
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.475,
+      "box": {
+        "x1": 69,
+        "y1": 2283,
+        "x2": 195,
+        "y2": 2392
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.454,
+      "box": {
+        "x1": 0,
+        "y1": 1723,
+        "x2": 130,
+        "y2": 1854
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.405,
+      "box": {
+        "x1": 1866,
+        "y1": 524,
+        "x2": 2087,
+        "y2": 739
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.366,
+      "box": {
+        "x1": 1859,
+        "y1": 503,
+        "x2": 2089,
+        "y2": 740
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.358,
+      "box": {
+        "x1": 812,
+        "y1": 2399,
+        "x2": 1013,
+        "y2": 2526
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.346,
+      "box": {
+        "x1": 1329,
+        "y1": 2351,
+        "x2": 1592,
+        "y2": 2548
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.302,
+      "box": {
+        "x1": 136,
+        "y1": 2506,
+        "x2": 368,
+        "y2": 2676
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.294,
+      "box": {
+        "x1": 2114,
+        "y1": 1632,
+        "x2": 2160,
+        "y2": 1778
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.284,
+      "box": {
+        "x1": 1617,
+        "y1": 1,
+        "x2": 2160,
+        "y2": 220
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.26,
+      "box": {
+        "x1": 815,
+        "y1": 2401,
+        "x2": 1013,
+        "y2": 2530
+      }
+    }
+  ]
+}

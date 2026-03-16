@@ -1,0 +1,48 @@
+{
+  "timestamp": 1773640239825,
+  "session_id": "izvcu3vgjormmsrlg7t",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.02763970012621,
+    "longitude": 135.7826417756664,
+    "accuracy": 15.251524328322628
+  },
+  "orientation": {
+    "alpha": 1.86,
+    "beta": 57.59,
+    "gamma": -3.28
+  },
+  "detections": [
+    {
+      "label": "mountain",
+      "confidence": 0.565,
+      "box": {
+        "x1": 1914,
+        "y1": 2370,
+        "x2": 2098,
+        "y2": 2500
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.481,
+      "box": {
+        "x1": 2021,
+        "y1": 2852,
+        "x2": 2160,
+        "y2": 2998
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.311,
+      "box": {
+        "x1": 1832,
+        "y1": 2894,
+        "x2": 1969,
+        "y2": 3031
+      }
+    }
+  ]
+}

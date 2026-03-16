@@ -1,0 +1,78 @@
+{
+  "timestamp": 1773617962561,
+  "session_id": "5gub5qv0vltmmsebrz7",
+  "message": "",
+  "nickname": "gergo",
+  "location": {
+    "latitude": 35.02336340971024,
+    "longitude": 135.73774215303172,
+    "accuracy": 18.14454157059368
+  },
+  "orientation": {
+    "alpha": 351.98,
+    "beta": 29.42,
+    "gamma": 3.19
+  },
+  "detections": [
+    {
+      "label": "take",
+      "confidence": 0.965,
+      "box": {
+        "x1": 1011,
+        "y1": 2332,
+        "x2": 1916,
+        "y2": 3247
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.922,
+      "box": {
+        "x1": 460,
+        "y1": 1277,
+        "x2": 985,
+        "y2": 1645
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.734,
+      "box": {
+        "x1": 1073,
+        "y1": 835,
+        "x2": 2118,
+        "y2": 1452
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.677,
+      "box": {
+        "x1": 0,
+        "y1": 1758,
+        "x2": 817,
+        "y2": 2630
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.278,
+      "box": {
+        "x1": 0,
+        "y1": 1753,
+        "x2": 816,
+        "y2": 2632
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.275,
+      "box": {
+        "x1": 851,
+        "y1": 1682,
+        "x2": 1252,
+        "y2": 2032
+      }
+    }
+  ]
+}

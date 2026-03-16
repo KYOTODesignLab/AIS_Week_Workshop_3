@@ -1,0 +1,138 @@
+{
+  "timestamp": 1773632546525,
+  "session_id": "tplormov1smmsmrnoy",
+  "message": "",
+  "nickname": "grgle",
+  "location": {
+    "latitude": 35.047200895165794,
+    "longitude": 135.78429179075644,
+    "accuracy": 14.24595459057527
+  },
+  "orientation": {
+    "alpha": 344.98,
+    "beta": 81.13,
+    "gamma": 11.66
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.923,
+      "box": {
+        "x1": 1713,
+        "y1": 3044,
+        "x2": 1897,
+        "y2": 3210
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.604,
+      "box": {
+        "x1": 1770,
+        "y1": 2705,
+        "x2": 1935,
+        "y2": 2873
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.584,
+      "box": {
+        "x1": 800,
+        "y1": 1980,
+        "x2": 846,
+        "y2": 2031
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.583,
+      "box": {
+        "x1": 1508,
+        "y1": 2951,
+        "x2": 1638,
+        "y2": 3049
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.571,
+      "box": {
+        "x1": 1478,
+        "y1": 3132,
+        "x2": 1570,
+        "y2": 3235
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.552,
+      "box": {
+        "x1": 1890,
+        "y1": 1980,
+        "x2": 2023,
+        "y2": 2092
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.456,
+      "box": {
+        "x1": 2000,
+        "y1": 2474,
+        "x2": 2145,
+        "y2": 2636
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.365,
+      "box": {
+        "x1": 1997,
+        "y1": 2473,
+        "x2": 2143,
+        "y2": 2641
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.332,
+      "box": {
+        "x1": 1837,
+        "y1": 2133,
+        "x2": 1913,
+        "y2": 2202
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.273,
+      "box": {
+        "x1": 1598,
+        "y1": 1923,
+        "x2": 1642,
+        "y2": 1981
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.27,
+      "box": {
+        "x1": 2103,
+        "y1": 2390,
+        "x2": 2160,
+        "y2": 2463
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.252,
+      "box": {
+        "x1": 863,
+        "y1": 1918,
+        "x2": 943,
+        "y2": 1969
+      }
+    }
+  ]
+}

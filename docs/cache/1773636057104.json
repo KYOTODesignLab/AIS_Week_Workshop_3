@@ -1,0 +1,174 @@
+{
+  "timestamp": 1773636057104,
+  "session_id": "a7nv8x3mp8rmmsntr3m",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": {
+    "alpha": 65.26,
+    "beta": 0.89,
+    "gamma": -86.4
+  },
+  "detections": [
+    {
+      "label": "sunlight",
+      "confidence": 0.893,
+      "box": {
+        "x1": 328,
+        "y1": 2810,
+        "x2": 412,
+        "y2": 2918
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.727,
+      "box": {
+        "x1": 161,
+        "y1": 1560,
+        "x2": 369,
+        "y2": 1814
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.719,
+      "box": {
+        "x1": 308,
+        "y1": 3828,
+        "x2": 505,
+        "y2": 4018
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.644,
+      "box": {
+        "x1": 183,
+        "y1": 2465,
+        "x2": 261,
+        "y2": 2565
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.624,
+      "box": {
+        "x1": 130,
+        "y1": 3490,
+        "x2": 359,
+        "y2": 3639
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.596,
+      "box": {
+        "x1": 716,
+        "y1": 2302,
+        "x2": 859,
+        "y2": 2496
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.558,
+      "box": {
+        "x1": 0,
+        "y1": 1359,
+        "x2": 55,
+        "y2": 1455
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.511,
+      "box": {
+        "x1": 631,
+        "y1": 2007,
+        "x2": 721,
+        "y2": 2099
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.502,
+      "box": {
+        "x1": 703,
+        "y1": 1663,
+        "x2": 791,
+        "y2": 1760
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.481,
+      "box": {
+        "x1": 141,
+        "y1": 1946,
+        "x2": 286,
+        "y2": 2148
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.467,
+      "box": {
+        "x1": 486,
+        "y1": 2315,
+        "x2": 649,
+        "y2": 2473
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.455,
+      "box": {
+        "x1": 336,
+        "y1": 2525,
+        "x2": 456,
+        "y2": 2710
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.422,
+      "box": {
+        "x1": 0,
+        "y1": 1752,
+        "x2": 72,
+        "y2": 2001
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.299,
+      "box": {
+        "x1": 629,
+        "y1": 1800,
+        "x2": 713,
+        "y2": 1897
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.273,
+      "box": {
+        "x1": 59,
+        "y1": 1655,
+        "x2": 143,
+        "y2": 1776
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.267,
+      "box": {
+        "x1": 501,
+        "y1": 2308,
+        "x2": 643,
+        "y2": 2472
+      }
+    }
+  ]
+}

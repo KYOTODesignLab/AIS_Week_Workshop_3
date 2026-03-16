@@ -1,0 +1,68 @@
+{
+  "timestamp": 1773638266849,
+  "session_id": "d59yumea1q9mmspyquv",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.0300394243327,
+    "longitude": 135.78336124387147,
+    "accuracy": 14.245954517119
+  },
+  "orientation": {
+    "alpha": 15.82,
+    "beta": 63.24,
+    "gamma": 2.78
+  },
+  "detections": [
+    {
+      "label": "big",
+      "confidence": 0.804,
+      "box": {
+        "x1": 0,
+        "y1": 2731,
+        "x2": 62,
+        "y2": 2816
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.453,
+      "box": {
+        "x1": 1994,
+        "y1": 2844,
+        "x2": 2095,
+        "y2": 2900
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.279,
+      "box": {
+        "x1": 0,
+        "y1": 2405,
+        "x2": 42,
+        "y2": 2475
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.275,
+      "box": {
+        "x1": 163,
+        "y1": 2492,
+        "x2": 280,
+        "y2": 2625
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.27,
+      "box": {
+        "x1": 1393,
+        "y1": 2700,
+        "x2": 1452,
+        "y2": 2735
+      }
+    }
+  ]
+}

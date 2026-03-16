@@ -1,0 +1,24 @@
+{
+  "timestamp": 1773640201392,
+  "session_id": "6ie681x46oemmsrkjhy",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": {
+    "alpha": 322.58,
+    "beta": 56.68,
+    "gamma": 23.02
+  },
+  "detections": [
+    {
+      "label": "many",
+      "confidence": 0.436,
+      "box": {
+        "x1": 149,
+        "y1": 2499,
+        "x2": 230,
+        "y2": 2548
+      }
+    }
+  ]
+}

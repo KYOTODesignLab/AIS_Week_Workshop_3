@@ -1,0 +1,48 @@
+{
+  "timestamp": 1773636771205,
+  "session_id": "qy4w46wjq9mmspiomu",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.036632186004304,
+    "longitude": 135.78511462043235,
+    "accuracy": 14.24595459057527
+  },
+  "orientation": {
+    "alpha": 355.2,
+    "beta": 45.06,
+    "gamma": 13.21
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.653,
+      "box": {
+        "x1": 1977,
+        "y1": 1784,
+        "x2": 2160,
+        "y2": 1912
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.562,
+      "box": {
+        "x1": 0,
+        "y1": 3211,
+        "x2": 373,
+        "y2": 3711
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.397,
+      "box": {
+        "x1": 0,
+        "y1": 2131,
+        "x2": 123,
+        "y2": 2300
+      }
+    }
+  ]
+}

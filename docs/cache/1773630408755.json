@@ -1,0 +1,188 @@
+{
+  "timestamp": 1773630408755,
+  "session_id": "aboyz61ojucmmsksmwy",
+  "message": "",
+  "nickname": "ggggggggg",
+  "location": {
+    "latitude": 35.049443493416575,
+    "longitude": 135.78308090583727,
+    "accuracy": 10.47737182441719
+  },
+  "orientation": {
+    "alpha": 7.88,
+    "beta": 56.76,
+    "gamma": -1.28
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.924,
+      "box": {
+        "x1": 1302,
+        "y1": 1853,
+        "x2": 1553,
+        "y2": 1988
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.794,
+      "box": {
+        "x1": 939,
+        "y1": 1556,
+        "x2": 1018,
+        "y2": 1643
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.722,
+      "box": {
+        "x1": 162,
+        "y1": 1303,
+        "x2": 260,
+        "y2": 1378
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.615,
+      "box": {
+        "x1": 790,
+        "y1": 1755,
+        "x2": 1006,
+        "y2": 1871
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.573,
+      "box": {
+        "x1": 639,
+        "y1": 1912,
+        "x2": 737,
+        "y2": 1993
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.564,
+      "box": {
+        "x1": 1394,
+        "y1": 1767,
+        "x2": 1518,
+        "y2": 1859
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.544,
+      "box": {
+        "x1": 1231,
+        "y1": 1666,
+        "x2": 1386,
+        "y2": 1757
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.45,
+      "box": {
+        "x1": 589,
+        "y1": 2399,
+        "x2": 864,
+        "y2": 2528
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.434,
+      "box": {
+        "x1": 281,
+        "y1": 1756,
+        "x2": 426,
+        "y2": 1839
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.414,
+      "box": {
+        "x1": 65,
+        "y1": 1577,
+        "x2": 133,
+        "y2": 1644
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.363,
+      "box": {
+        "x1": 1451,
+        "y1": 2388,
+        "x2": 1610,
+        "y2": 2478
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.322,
+      "box": {
+        "x1": 1010,
+        "y1": 1804,
+        "x2": 1065,
+        "y2": 1846
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.3,
+      "box": {
+        "x1": 823,
+        "y1": 1651,
+        "x2": 910,
+        "y2": 1706
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.295,
+      "box": {
+        "x1": 0,
+        "y1": 1312,
+        "x2": 114,
+        "y2": 1449
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.263,
+      "box": {
+        "x1": 58,
+        "y1": 1680,
+        "x2": 147,
+        "y2": 1731
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.258,
+      "box": {
+        "x1": 960,
+        "y1": 2148,
+        "x2": 1286,
+        "y2": 2330
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.254,
+      "box": {
+        "x1": 275,
+        "y1": 1241,
+        "x2": 337,
+        "y2": 1333
+      }
+    }
+  ]
+}

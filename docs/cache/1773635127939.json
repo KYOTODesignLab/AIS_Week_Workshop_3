@@ -1,0 +1,128 @@
+{
+  "timestamp": 1773635127939,
+  "session_id": "ukz8xtlz77mmsohdiy",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.04194904781684,
+    "longitude": 135.7834299761977,
+    "accuracy": 14.24595460704897
+  },
+  "orientation": {
+    "alpha": 357.92,
+    "beta": -1.16,
+    "gamma": -45.76
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.858,
+      "box": {
+        "x1": 317,
+        "y1": 816,
+        "x2": 527,
+        "y2": 1072
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.843,
+      "box": {
+        "x1": 990,
+        "y1": 2792,
+        "x2": 1144,
+        "y2": 2983
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.561,
+      "box": {
+        "x1": 98,
+        "y1": 2568,
+        "x2": 276,
+        "y2": 2763
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.522,
+      "box": {
+        "x1": 787,
+        "y1": 496,
+        "x2": 902,
+        "y2": 665
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.516,
+      "box": {
+        "x1": 774,
+        "y1": 2808,
+        "x2": 921,
+        "y2": 2987
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.516,
+      "box": {
+        "x1": 103,
+        "y1": 2576,
+        "x2": 271,
+        "y2": 2760
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.51,
+      "box": {
+        "x1": 153,
+        "y1": 1905,
+        "x2": 251,
+        "y2": 2020
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.49,
+      "box": {
+        "x1": 88,
+        "y1": 1402,
+        "x2": 287,
+        "y2": 1602
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.321,
+      "box": {
+        "x1": 784,
+        "y1": 2468,
+        "x2": 965,
+        "y2": 2677
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.299,
+      "box": {
+        "x1": 537,
+        "y1": 2693,
+        "x2": 655,
+        "y2": 2822
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.251,
+      "box": {
+        "x1": 1649,
+        "y1": 1843,
+        "x2": 1706,
+        "y2": 1913
+      }
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "timestamp": 1773582214820,
+  "session_id": "ido6368cohmmrt0kkq",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": {
+    "alpha": 90.24,
+    "beta": 44.24,
+    "gamma": 2.87
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.672,
+      "box": {
+        "x1": 21,
+        "y1": 2899,
+        "x2": 269,
+        "y2": 3037
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.559,
+      "box": {
+        "x1": 0,
+        "y1": 1787,
+        "x2": 189,
+        "y2": 1938
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.507,
+      "box": {
+        "x1": 1810,
+        "y1": 2624,
+        "x2": 2155,
+        "y2": 2811
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.454,
+      "box": {
+        "x1": 1873,
+        "y1": 2810,
+        "x2": 2037,
+        "y2": 2915
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.428,
+      "box": {
+        "x1": 180,
+        "y1": 3029,
+        "x2": 307,
+        "y2": 3169
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.408,
+      "box": {
+        "x1": 1768,
+        "y1": 3296,
+        "x2": 1947,
+        "y2": 3480
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.307,
+      "box": {
+        "x1": 0,
+        "y1": 2362,
+        "x2": 260,
+        "y2": 2600
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.26,
+      "box": {
+        "x1": 1990,
+        "y1": 2378,
+        "x2": 2160,
+        "y2": 2567
+      }
+    }
+  ]
+}

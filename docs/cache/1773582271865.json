@@ -1,0 +1,148 @@
+{
+  "timestamp": 1773582271865,
+  "session_id": "5j943haw8i5mmrt11a2",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.04943637549634,
+    "longitude": 135.78302426791328,
+    "accuracy": 12.98905232327881
+  },
+  "orientation": {
+    "alpha": 18.23,
+    "beta": 39.7,
+    "gamma": -8.18
+  },
+  "detections": [
+    {
+      "label": "take",
+      "confidence": 0.84,
+      "box": {
+        "x1": 1366,
+        "y1": 2095,
+        "x2": 1754,
+        "y2": 2261
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.699,
+      "box": {
+        "x1": 188,
+        "y1": 2054,
+        "x2": 616,
+        "y2": 2212
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.698,
+      "box": {
+        "x1": 1380,
+        "y1": 2399,
+        "x2": 1669,
+        "y2": 2534
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.666,
+      "box": {
+        "x1": 1796,
+        "y1": 2164,
+        "x2": 1996,
+        "y2": 2251
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.572,
+      "box": {
+        "x1": 437,
+        "y1": 1690,
+        "x2": 551,
+        "y2": 1770
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.546,
+      "box": {
+        "x1": 1266,
+        "y1": 1792,
+        "x2": 1628,
+        "y2": 1945
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.515,
+      "box": {
+        "x1": 799,
+        "y1": 2238,
+        "x2": 1107,
+        "y2": 2376
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.488,
+      "box": {
+        "x1": 11,
+        "y1": 1800,
+        "x2": 217,
+        "y2": 1877
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.347,
+      "box": {
+        "x1": 343,
+        "y1": 1748,
+        "x2": 468,
+        "y2": 1861
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.32,
+      "box": {
+        "x1": 450,
+        "y1": 1809,
+        "x2": 738,
+        "y2": 1900
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.3,
+      "box": {
+        "x1": 432,
+        "y1": 2366,
+        "x2": 630,
+        "y2": 2463
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.285,
+      "box": {
+        "x1": 447,
+        "y1": 1979,
+        "x2": 611,
+        "y2": 2055
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.283,
+      "box": {
+        "x1": 1658,
+        "y1": 1765,
+        "x2": 1859,
+        "y2": 1910
+      }
+    }
+  ]
+}

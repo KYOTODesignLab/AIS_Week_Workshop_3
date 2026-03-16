@@ -1,0 +1,74 @@
+{
+  "timestamp": 1773636209672,
+  "session_id": "a7nv8x3mp8rmmsntr3m",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": {
+    "alpha": 266.57,
+    "beta": 41.88,
+    "gamma": 9.28
+  },
+  "detections": [
+    {
+      "label": "take",
+      "confidence": 0.786,
+      "box": {
+        "x1": 145,
+        "y1": 2592,
+        "x2": 400,
+        "y2": 2833
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.589,
+      "box": {
+        "x1": 226,
+        "y1": 1950,
+        "x2": 400,
+        "y2": 2082
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.478,
+      "box": {
+        "x1": 60,
+        "y1": 3868,
+        "x2": 366,
+        "y2": 4031
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.385,
+      "box": {
+        "x1": 451,
+        "y1": 2831,
+        "x2": 555,
+        "y2": 2934
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.35,
+      "box": {
+        "x1": 148,
+        "y1": 2616,
+        "x2": 402,
+        "y2": 2830
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.273,
+      "box": {
+        "x1": 227,
+        "y1": 2257,
+        "x2": 378,
+        "y2": 2409
+      }
+    }
+  ]
+}

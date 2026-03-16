@@ -1,0 +1,138 @@
+{
+  "timestamp": 1773638305360,
+  "session_id": "kedlzx5bsftmmsqfhok",
+  "message": "",
+  "nickname": "gergo",
+  "location": {
+    "latitude": 35.029811115038214,
+    "longitude": 135.78334879176026,
+    "accuracy": 14.24595459057527
+  },
+  "orientation": {
+    "alpha": 51.71,
+    "beta": 78.4,
+    "gamma": 4.88
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.817,
+      "box": {
+        "x1": 1684,
+        "y1": 2883,
+        "x2": 1994,
+        "y2": 3023
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.628,
+      "box": {
+        "x1": 1686,
+        "y1": 3086,
+        "x2": 1828,
+        "y2": 3180
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.605,
+      "box": {
+        "x1": 1562,
+        "y1": 2076,
+        "x2": 1667,
+        "y2": 2154
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.6,
+      "box": {
+        "x1": 1872,
+        "y1": 2428,
+        "x2": 2110,
+        "y2": 2554
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.52,
+      "box": {
+        "x1": 1619,
+        "y1": 2640,
+        "x2": 1876,
+        "y2": 2766
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.409,
+      "box": {
+        "x1": 1327,
+        "y1": 2712,
+        "x2": 1579,
+        "y2": 2883
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.391,
+      "box": {
+        "x1": 1789,
+        "y1": 2085,
+        "x2": 1927,
+        "y2": 2161
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.351,
+      "box": {
+        "x1": 1312,
+        "y1": 2717,
+        "x2": 1576,
+        "y2": 2939
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.282,
+      "box": {
+        "x1": 1643,
+        "y1": 2437,
+        "x2": 1837,
+        "y2": 2524
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.264,
+      "box": {
+        "x1": 1974,
+        "y1": 1970,
+        "x2": 2056,
+        "y2": 2053
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.263,
+      "box": {
+        "x1": 1389,
+        "y1": 2104,
+        "x2": 1538,
+        "y2": 2236
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.255,
+      "box": {
+        "x1": 1377,
+        "y1": 2311,
+        "x2": 1607,
+        "y2": 2486
+      }
+    }
+  ]
+}

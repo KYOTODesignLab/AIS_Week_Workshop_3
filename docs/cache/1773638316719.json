@@ -1,0 +1,118 @@
+{
+  "timestamp": 1773638316719,
+  "session_id": "kedlzx5bsftmmsqfhok",
+  "message": "",
+  "nickname": "gergo",
+  "location": {
+    "latitude": 35.029730988310405,
+    "longitude": 135.78334442225358,
+    "accuracy": 14.24595449929997
+  },
+  "orientation": {
+    "alpha": 39.84,
+    "beta": 73.08,
+    "gamma": 0.83
+  },
+  "detections": [
+    {
+      "label": "zinzya",
+      "confidence": 0.77,
+      "box": {
+        "x1": 1936,
+        "y1": 212,
+        "x2": 2160,
+        "y2": 494
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.653,
+      "box": {
+        "x1": 1329,
+        "y1": 2076,
+        "x2": 1481,
+        "y2": 2137
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.652,
+      "box": {
+        "x1": 1789,
+        "y1": 2607,
+        "x2": 2002,
+        "y2": 2720
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.472,
+      "box": {
+        "x1": 2107,
+        "y1": 2540,
+        "x2": 2160,
+        "y2": 2618
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.466,
+      "box": {
+        "x1": 1572,
+        "y1": 2327,
+        "x2": 1755,
+        "y2": 2436
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.333,
+      "box": {
+        "x1": 2029,
+        "y1": 1099,
+        "x2": 2160,
+        "y2": 1288
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.269,
+      "box": {
+        "x1": 1592,
+        "y1": 2387,
+        "x2": 1738,
+        "y2": 2436
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.263,
+      "box": {
+        "x1": 1340,
+        "y1": 2204,
+        "x2": 1529,
+        "y2": 2325
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.261,
+      "box": {
+        "x1": 2002,
+        "y1": 1063,
+        "x2": 2160,
+        "y2": 1189
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.251,
+      "box": {
+        "x1": 1008,
+        "y1": 2108,
+        "x2": 1152,
+        "y2": 2173
+      }
+    }
+  ]
+}

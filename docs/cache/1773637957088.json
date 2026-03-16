@@ -1,0 +1,88 @@
+{
+  "timestamp": 1773637957088,
+  "session_id": "d59yumea1q9mmspyquv",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.03307166187847,
+    "longitude": 135.7838261179491,
+    "accuracy": 6.422973448574507
+  },
+  "orientation": {
+    "alpha": 154.04,
+    "beta": 68.99,
+    "gamma": 11.31
+  },
+  "detections": [
+    {
+      "label": "many",
+      "confidence": 0.707,
+      "box": {
+        "x1": 108,
+        "y1": 3140,
+        "x2": 193,
+        "y2": 3178
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.545,
+      "box": {
+        "x1": 1694,
+        "y1": 2957,
+        "x2": 1824,
+        "y2": 3065
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.393,
+      "box": {
+        "x1": 96,
+        "y1": 2989,
+        "x2": 250,
+        "y2": 3124
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.34,
+      "box": {
+        "x1": 1934,
+        "y1": 3098,
+        "x2": 2067,
+        "y2": 3198
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.301,
+      "box": {
+        "x1": 1503,
+        "y1": 3203,
+        "x2": 1733,
+        "y2": 3291
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.29,
+      "box": {
+        "x1": 378,
+        "y1": 2834,
+        "x2": 426,
+        "y2": 2876
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.288,
+      "box": {
+        "x1": 1831,
+        "y1": 3219,
+        "x2": 1934,
+        "y2": 3291
+      }
+    }
+  ]
+}

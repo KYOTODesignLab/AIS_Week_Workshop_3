@@ -1,0 +1,124 @@
+{
+  "timestamp": 1773634028672,
+  "session_id": "ed523m9wqzsmmsnvhuy",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.04390894918225,
+    "longitude": 135.7859368293311,
+    "accuracy": 14.245954590575286
+  },
+  "orientation": null,
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.863,
+      "box": {
+        "x1": 505,
+        "y1": 3243,
+        "x2": 821,
+        "y2": 3604
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.71,
+      "box": {
+        "x1": 579,
+        "y1": 1582,
+        "x2": 722,
+        "y2": 1776
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.546,
+      "box": {
+        "x1": 884,
+        "y1": 2624,
+        "x2": 1027,
+        "y2": 2788
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.538,
+      "box": {
+        "x1": 715,
+        "y1": 1578,
+        "x2": 913,
+        "y2": 1798
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.537,
+      "box": {
+        "x1": 1420,
+        "y1": 3015,
+        "x2": 1577,
+        "y2": 3159
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.481,
+      "box": {
+        "x1": 612,
+        "y1": 479,
+        "x2": 791,
+        "y2": 670
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.477,
+      "box": {
+        "x1": 671,
+        "y1": 1206,
+        "x2": 798,
+        "y2": 1415
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.301,
+      "box": {
+        "x1": 892,
+        "y1": 272,
+        "x2": 1001,
+        "y2": 379
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.271,
+      "box": {
+        "x1": 657,
+        "y1": 1000,
+        "x2": 736,
+        "y2": 1130
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.271,
+      "box": {
+        "x1": 594,
+        "y1": 2479,
+        "x2": 698,
+        "y2": 2598
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.258,
+      "box": {
+        "x1": 1004,
+        "y1": 271,
+        "x2": 1147,
+        "y2": 397
+      }
+    }
+  ]
+}

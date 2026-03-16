@@ -1,0 +1,17 @@
+{
+  "timestamp": 1773579997386,
+  "session_id": "r8iyb3m2zismmrr08n0",
+  "message": "",
+  "nickname": "ggggggg",
+  "location": {
+    "latitude": 35.04949909931155,
+    "longitude": 135.78315622971732,
+    "accuracy": 22.959624822470687
+  },
+  "orientation": {
+    "alpha": 338.16,
+    "beta": 33.75,
+    "gamma": -6.25
+  },
+  "detections": []
+}

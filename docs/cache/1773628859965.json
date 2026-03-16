@@ -1,0 +1,38 @@
+{
+  "timestamp": 1773628859965,
+  "session_id": "aboyz61ojucmmsksmwy",
+  "message": "",
+  "nickname": "ggggggggg",
+  "location": {
+    "latitude": 35.04961937581485,
+    "longitude": 135.7832781917745,
+    "accuracy": 18.920625145901976
+  },
+  "orientation": {
+    "alpha": 88.41,
+    "beta": 28.81,
+    "gamma": 1.42
+  },
+  "detections": [
+    {
+      "label": "take",
+      "confidence": 0.304,
+      "box": {
+        "x1": 312,
+        "y1": 1682,
+        "x2": 705,
+        "y2": 1995
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.294,
+      "box": {
+        "x1": 408,
+        "y1": 2384,
+        "x2": 877,
+        "y2": 2850
+      }
+    }
+  ]
+}

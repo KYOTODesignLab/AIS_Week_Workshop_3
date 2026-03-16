@@ -1,0 +1,28 @@
+{
+  "timestamp": 1773632244556,
+  "session_id": "xuzstbnps7mmsmtmtw",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.048198547442695,
+    "longitude": 135.78267765519197,
+    "accuracy": 14.245954863366926
+  },
+  "orientation": {
+    "alpha": 19.11,
+    "beta": 29.69,
+    "gamma": 4.16
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.512,
+      "box": {
+        "x1": 846,
+        "y1": 3500,
+        "x2": 1091,
+        "y2": 3669
+      }
+    }
+  ]
+}

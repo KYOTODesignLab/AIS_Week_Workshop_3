@@ -1,0 +1,320 @@
+{
+  "timestamp": 1773635137467,
+  "session_id": "689qe1yfzxvmmsobbcu",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": null,
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.945,
+      "box": {
+        "x1": 1450,
+        "y1": 1489,
+        "x2": 1637,
+        "y2": 1614
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.935,
+      "box": {
+        "x1": 1249,
+        "y1": 1693,
+        "x2": 1389,
+        "y2": 1772
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.914,
+      "box": {
+        "x1": 1212,
+        "y1": 1500,
+        "x2": 1434,
+        "y2": 1648
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.885,
+      "box": {
+        "x1": 1249,
+        "y1": 914,
+        "x2": 1375,
+        "y2": 1010
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.881,
+      "box": {
+        "x1": 945,
+        "y1": 971,
+        "x2": 1074,
+        "y2": 1104
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.856,
+      "box": {
+        "x1": 878,
+        "y1": 1679,
+        "x2": 1021,
+        "y2": 1785
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.823,
+      "box": {
+        "x1": 1524,
+        "y1": 1727,
+        "x2": 1717,
+        "y2": 1848
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.788,
+      "box": {
+        "x1": 891,
+        "y1": 1159,
+        "x2": 970,
+        "y2": 1240
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.761,
+      "box": {
+        "x1": 1461,
+        "y1": 1047,
+        "x2": 1562,
+        "y2": 1105
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.684,
+      "box": {
+        "x1": 487,
+        "y1": 1808,
+        "x2": 725,
+        "y2": 1972
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.631,
+      "box": {
+        "x1": 273,
+        "y1": 1235,
+        "x2": 352,
+        "y2": 1305
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.574,
+      "box": {
+        "x1": 159,
+        "y1": 1385,
+        "x2": 270,
+        "y2": 1474
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.558,
+      "box": {
+        "x1": 1116,
+        "y1": 1829,
+        "x2": 1257,
+        "y2": 1937
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.535,
+      "box": {
+        "x1": 527,
+        "y1": 1537,
+        "x2": 754,
+        "y2": 1682
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.472,
+      "box": {
+        "x1": 140,
+        "y1": 1511,
+        "x2": 288,
+        "y2": 1618
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.465,
+      "box": {
+        "x1": 1004,
+        "y1": 1627,
+        "x2": 1079,
+        "y2": 1682
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.463,
+      "box": {
+        "x1": 1045,
+        "y1": 1177,
+        "x2": 1143,
+        "y2": 1235
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.449,
+      "box": {
+        "x1": 1220,
+        "y1": 1126,
+        "x2": 1396,
+        "y2": 1264
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.424,
+      "box": {
+        "x1": 614,
+        "y1": 1130,
+        "x2": 817,
+        "y2": 1264
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.399,
+      "box": {
+        "x1": 346,
+        "y1": 1851,
+        "x2": 445,
+        "y2": 1955
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.377,
+      "box": {
+        "x1": 1616,
+        "y1": 1317,
+        "x2": 1795,
+        "y2": 1420
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.352,
+      "box": {
+        "x1": 1316,
+        "y1": 1062,
+        "x2": 1381,
+        "y2": 1116
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.343,
+      "box": {
+        "x1": 1635,
+        "y1": 1151,
+        "x2": 1756,
+        "y2": 1227
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.34,
+      "box": {
+        "x1": 1402,
+        "y1": 928,
+        "x2": 1457,
+        "y2": 972
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.301,
+      "box": {
+        "x1": 1202,
+        "y1": 1330,
+        "x2": 1279,
+        "y2": 1394
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.281,
+      "box": {
+        "x1": 1571,
+        "y1": 1077,
+        "x2": 1619,
+        "y2": 1111
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.279,
+      "box": {
+        "x1": 992,
+        "y1": 1275,
+        "x2": 1066,
+        "y2": 1350
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.265,
+      "box": {
+        "x1": 433,
+        "y1": 1508,
+        "x2": 532,
+        "y2": 1581
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.265,
+      "box": {
+        "x1": 144,
+        "y1": 1980,
+        "x2": 232,
+        "y2": 2066
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.253,
+      "box": {
+        "x1": 196,
+        "y1": 1696,
+        "x2": 288,
+        "y2": 1779
+      }
+    },
+    {
+      "label": "zinzya",
+      "confidence": 0.252,
+      "box": {
+        "x1": 10,
+        "y1": 1702,
+        "x2": 177,
+        "y2": 1814
+      }
+    }
+  ]
+}

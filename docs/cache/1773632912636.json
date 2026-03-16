@@ -1,0 +1,134 @@
+{
+  "timestamp": 1773632912636,
+  "session_id": "qquo3fgpnifmmsn6wdp",
+  "message": "",
+  "nickname": "Tig",
+  "location": null,
+  "orientation": {
+    "alpha": 23.3,
+    "beta": 34.3,
+    "gamma": 15.3
+  },
+  "detections": [
+    {
+      "label": "mountain",
+      "confidence": 0.885,
+      "box": {
+        "x1": 1613,
+        "y1": 2177,
+        "x2": 1751,
+        "y2": 2336
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.824,
+      "box": {
+        "x1": 702,
+        "y1": 2406,
+        "x2": 885,
+        "y2": 2556
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.67,
+      "box": {
+        "x1": 1812,
+        "y1": 2968,
+        "x2": 1925,
+        "y2": 3089
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.522,
+      "box": {
+        "x1": 400,
+        "y1": 1784,
+        "x2": 764,
+        "y2": 2159
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.507,
+      "box": {
+        "x1": 1779,
+        "y1": 3888,
+        "x2": 1943,
+        "y2": 4010
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.506,
+      "box": {
+        "x1": 918,
+        "y1": 2711,
+        "x2": 1074,
+        "y2": 2937
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.344,
+      "box": {
+        "x1": 574,
+        "y1": 2723,
+        "x2": 749,
+        "y2": 2895
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.284,
+      "box": {
+        "x1": 899,
+        "y1": 2321,
+        "x2": 1179,
+        "y2": 2653
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.272,
+      "box": {
+        "x1": 1678,
+        "y1": 3237,
+        "x2": 2037,
+        "y2": 3431
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.264,
+      "box": {
+        "x1": 397,
+        "y1": 1781,
+        "x2": 765,
+        "y2": 2156
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.26,
+      "box": {
+        "x1": 1790,
+        "y1": 2026,
+        "x2": 1949,
+        "y2": 2261
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.259,
+      "box": {
+        "x1": 1815,
+        "y1": 2318,
+        "x2": 1965,
+        "y2": 2510
+      }
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "timestamp": 1773634423964,
+  "session_id": "tplormov1smmsmrnoy",
+  "message": "",
+  "nickname": "grgle",
+  "location": {
+    "latitude": 35.04201729364505,
+    "longitude": 135.78446977598196,
+    "accuracy": 8.563219641534516
+  },
+  "orientation": {
+    "alpha": 7.59,
+    "beta": 51.22,
+    "gamma": -0.8
+  },
+  "detections": [
+    {
+      "label": "many",
+      "confidence": 0.747,
+      "box": {
+        "x1": 755,
+        "y1": 2351,
+        "x2": 833,
+        "y2": 2399
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.502,
+      "box": {
+        "x1": 307,
+        "y1": 2862,
+        "x2": 472,
+        "y2": 2952
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.461,
+      "box": {
+        "x1": 1414,
+        "y1": 2375,
+        "x2": 1498,
+        "y2": 2425
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.416,
+      "box": {
+        "x1": 495,
+        "y1": 2373,
+        "x2": 604,
+        "y2": 2461
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.401,
+      "box": {
+        "x1": 748,
+        "y1": 2501,
+        "x2": 1016,
+        "y2": 2688
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.383,
+      "box": {
+        "x1": 0,
+        "y1": 2974,
+        "x2": 223,
+        "y2": 3053
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.345,
+      "box": {
+        "x1": 158,
+        "y1": 2723,
+        "x2": 334,
+        "y2": 2844
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.294,
+      "box": {
+        "x1": 1154,
+        "y1": 2317,
+        "x2": 1274,
+        "y2": 2391
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.268,
+      "box": {
+        "x1": 445,
+        "y1": 2574,
+        "x2": 550,
+        "y2": 2660
+      }
+    }
+  ]
+}

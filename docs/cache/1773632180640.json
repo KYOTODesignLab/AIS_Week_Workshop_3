@@ -1,0 +1,48 @@
+{
+  "timestamp": 1773632180640,
+  "session_id": "tplormov1smmsmrnoy",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.04867150592181,
+    "longitude": 135.7825163459244,
+    "accuracy": 13.227416959920014
+  },
+  "orientation": {
+    "alpha": 300.77,
+    "beta": 26.5,
+    "gamma": 2.47
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.801,
+      "box": {
+        "x1": 1470,
+        "y1": 983,
+        "x2": 1651,
+        "y2": 1178
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.445,
+      "box": {
+        "x1": 195,
+        "y1": 2010,
+        "x2": 425,
+        "y2": 2162
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.315,
+      "box": {
+        "x1": 177,
+        "y1": 2350,
+        "x2": 334,
+        "y2": 2464
+      }
+    }
+  ]
+}

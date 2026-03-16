@@ -1,0 +1,88 @@
+{
+  "timestamp": 1773638289922,
+  "session_id": "kedlzx5bsftmmsqfhok",
+  "message": "",
+  "nickname": "gergo",
+  "location": {
+    "latitude": 35.02995798309873,
+    "longitude": 135.7833333860961,
+    "accuracy": 14.245954590575328
+  },
+  "orientation": {
+    "alpha": 62.34,
+    "beta": 77.71,
+    "gamma": -12.91
+  },
+  "detections": [
+    {
+      "label": "big",
+      "confidence": 0.48,
+      "box": {
+        "x1": 712,
+        "y1": 2516,
+        "x2": 783,
+        "y2": 2559
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.458,
+      "box": {
+        "x1": 424,
+        "y1": 2530,
+        "x2": 566,
+        "y2": 2646
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.453,
+      "box": {
+        "x1": 758,
+        "y1": 2517,
+        "x2": 809,
+        "y2": 2558
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.361,
+      "box": {
+        "x1": 158,
+        "y1": 2385,
+        "x2": 392,
+        "y2": 2461
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.291,
+      "box": {
+        "x1": 769,
+        "y1": 2516,
+        "x2": 837,
+        "y2": 2558
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.263,
+      "box": {
+        "x1": 821,
+        "y1": 2372,
+        "x2": 906,
+        "y2": 2409
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.257,
+      "box": {
+        "x1": 395,
+        "y1": 2345,
+        "x2": 450,
+        "y2": 2368
+      }
+    }
+  ]
+}

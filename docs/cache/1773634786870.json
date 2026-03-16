@@ -1,0 +1,50 @@
+{
+  "timestamp": 1773634786870,
+  "session_id": "689qe1yfzxvmmsobbcu",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": null,
+  "detections": [
+    {
+      "label": "mountain",
+      "confidence": 0.459,
+      "box": {
+        "x1": 294,
+        "y1": 2424,
+        "x2": 450,
+        "y2": 2519
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.436,
+      "box": {
+        "x1": 159,
+        "y1": 2238,
+        "x2": 314,
+        "y2": 2351
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.417,
+      "box": {
+        "x1": 494,
+        "y1": 1920,
+        "x2": 658,
+        "y2": 2008
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.355,
+      "box": {
+        "x1": 1343,
+        "y1": 3284,
+        "x2": 1621,
+        "y2": 3617
+      }
+    }
+  ]
+}

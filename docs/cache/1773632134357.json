@@ -1,0 +1,58 @@
+{
+  "timestamp": 1773632134357,
+  "session_id": "tplormov1smmsmrnoy",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.04909861902012,
+    "longitude": 135.7824669233003,
+    "accuracy": 5.160259095857698
+  },
+  "orientation": {
+    "alpha": 334.78,
+    "beta": 58.41,
+    "gamma": 4.19
+  },
+  "detections": [
+    {
+      "label": "sunlight",
+      "confidence": 0.618,
+      "box": {
+        "x1": 1243,
+        "y1": 2023,
+        "x2": 1388,
+        "y2": 2138
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.426,
+      "box": {
+        "x1": 624,
+        "y1": 2809,
+        "x2": 702,
+        "y2": 2871
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.396,
+      "box": {
+        "x1": 1030,
+        "y1": 2486,
+        "x2": 1139,
+        "y2": 2560
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.352,
+      "box": {
+        "x1": 2086,
+        "y1": 2098,
+        "x2": 2160,
+        "y2": 2232
+      }
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "timestamp": 1773632922743,
+  "session_id": "qquo3fgpnifmmsn6wdp",
+  "message": "",
+  "nickname": "Tig",
+  "location": null,
+  "orientation": {
+    "alpha": 5,
+    "beta": 27.4,
+    "gamma": 12.2
+  },
+  "detections": [
+    {
+      "label": "mountain",
+      "confidence": 0.856,
+      "box": {
+        "x1": 232,
+        "y1": 3050,
+        "x2": 484,
+        "y2": 3246
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.808,
+      "box": {
+        "x1": 513,
+        "y1": 3541,
+        "x2": 830,
+        "y2": 3913
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.691,
+      "box": {
+        "x1": 604,
+        "y1": 2495,
+        "x2": 797,
+        "y2": 2665
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.483,
+      "box": {
+        "x1": 404,
+        "y1": 2598,
+        "x2": 545,
+        "y2": 2746
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.445,
+      "box": {
+        "x1": 868,
+        "y1": 3079,
+        "x2": 1117,
+        "y2": 3519
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.441,
+      "box": {
+        "x1": 952,
+        "y1": 1716,
+        "x2": 1162,
+        "y2": 1881
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.341,
+      "box": {
+        "x1": 950,
+        "y1": 1513,
+        "x2": 1147,
+        "y2": 1621
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.306,
+      "box": {
+        "x1": 1084,
+        "y1": 1970,
+        "x2": 1225,
+        "y2": 2142
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.288,
+      "box": {
+        "x1": 0,
+        "y1": 2861,
+        "x2": 54,
+        "y2": 2912
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.272,
+      "box": {
+        "x1": 550,
+        "y1": 2847,
+        "x2": 854,
+        "y2": 3000
+      }
+    }
+  ]
+}

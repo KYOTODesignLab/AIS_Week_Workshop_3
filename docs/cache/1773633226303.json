@@ -1,0 +1,98 @@
+{
+  "timestamp": 1773633226303,
+  "session_id": "tplormov1smmsmrnoy",
+  "message": "",
+  "nickname": "grgle",
+  "location": {
+    "latitude": 35.04496896012957,
+    "longitude": 135.78577712173208,
+    "accuracy": 3.578878971965942
+  },
+  "orientation": {
+    "alpha": 3.77,
+    "beta": 37,
+    "gamma": 4.32
+  },
+  "detections": [
+    {
+      "label": "sunlight",
+      "confidence": 0.859,
+      "box": {
+        "x1": 130,
+        "y1": 1709,
+        "x2": 431,
+        "y2": 1935
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.47,
+      "box": {
+        "x1": 1539,
+        "y1": 2367,
+        "x2": 1729,
+        "y2": 2518
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.431,
+      "box": {
+        "x1": 941,
+        "y1": 2980,
+        "x2": 1240,
+        "y2": 3255
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.401,
+      "box": {
+        "x1": 934,
+        "y1": 2347,
+        "x2": 1065,
+        "y2": 2505
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.32,
+      "box": {
+        "x1": 259,
+        "y1": 2463,
+        "x2": 448,
+        "y2": 2610
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.274,
+      "box": {
+        "x1": 1969,
+        "y1": 2486,
+        "x2": 2160,
+        "y2": 2850
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.271,
+      "box": {
+        "x1": 1362,
+        "y1": 2698,
+        "x2": 1667,
+        "y2": 2953
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.263,
+      "box": {
+        "x1": 189,
+        "y1": 1607,
+        "x2": 310,
+        "y2": 1702
+      }
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "timestamp": 1773635848342,
+  "session_id": "a7nv8x3mp8rmmsntr3m",
+  "message": "",
+  "nickname": "anonymous",
+  "location": null,
+  "orientation": {
+    "alpha": 338.16,
+    "beta": 51.34,
+    "gamma": 13.11
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.629,
+      "box": {
+        "x1": 1763,
+        "y1": 1914,
+        "x2": 2044,
+        "y2": 2057
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.541,
+      "box": {
+        "x1": 1781,
+        "y1": 1497,
+        "x2": 1939,
+        "y2": 1593
+      }
+    },
+    {
+      "label": "take",
+      "confidence": 0.403,
+      "box": {
+        "x1": 1822,
+        "y1": 1663,
+        "x2": 2128,
+        "y2": 1813
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.367,
+      "box": {
+        "x1": 1725,
+        "y1": 1408,
+        "x2": 1836,
+        "y2": 1492
+      }
+    }
+  ]
+}

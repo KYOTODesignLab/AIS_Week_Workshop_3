@@ -1,0 +1,68 @@
+{
+  "timestamp": 1773637589132,
+  "session_id": "d59yumea1q9mmspyquv",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.036090080143794,
+    "longitude": 135.78432270926604,
+    "accuracy": 3.482546355870743
+  },
+  "orientation": {
+    "alpha": 314.22,
+    "beta": 82.29,
+    "gamma": 32.3
+  },
+  "detections": [
+    {
+      "label": "big",
+      "confidence": 0.461,
+      "box": {
+        "x1": 138,
+        "y1": 3291,
+        "x2": 194,
+        "y2": 3339
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.413,
+      "box": {
+        "x1": 474,
+        "y1": 3383,
+        "x2": 637,
+        "y2": 3569
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.39,
+      "box": {
+        "x1": 0,
+        "y1": 2842,
+        "x2": 101,
+        "y2": 2956
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.337,
+      "box": {
+        "x1": 54,
+        "y1": 3490,
+        "x2": 221,
+        "y2": 3710
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.259,
+      "box": {
+        "x1": 151,
+        "y1": 3292,
+        "x2": 210,
+        "y2": 3340
+      }
+    }
+  ]
+}

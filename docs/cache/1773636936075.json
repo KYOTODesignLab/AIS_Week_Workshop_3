@@ -1,0 +1,118 @@
+{
+  "timestamp": 1773636936075,
+  "session_id": "qy4w46wjq9mmspiomu",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.0366365286016,
+    "longitude": 135.78509053927212,
+    "accuracy": 14.245954590575272
+  },
+  "orientation": {
+    "alpha": 122.68,
+    "beta": 61.17,
+    "gamma": -5.1
+  },
+  "detections": [
+    {
+      "label": "kamogawa",
+      "confidence": 0.509,
+      "box": {
+        "x1": 1,
+        "y1": 1421,
+        "x2": 214,
+        "y2": 1604
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.433,
+      "box": {
+        "x1": 1474,
+        "y1": 1841,
+        "x2": 1519,
+        "y2": 1888
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.43,
+      "box": {
+        "x1": 1506,
+        "y1": 1513,
+        "x2": 1647,
+        "y2": 1597
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.385,
+      "box": {
+        "x1": 1436,
+        "y1": 1622,
+        "x2": 1488,
+        "y2": 1657
+      }
+    },
+    {
+      "label": "big",
+      "confidence": 0.361,
+      "box": {
+        "x1": 1457,
+        "y1": 1840,
+        "x2": 1516,
+        "y2": 1886
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.327,
+      "box": {
+        "x1": 1790,
+        "y1": 2549,
+        "x2": 2160,
+        "y2": 2853
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.322,
+      "box": {
+        "x1": 1423,
+        "y1": 1595,
+        "x2": 1491,
+        "y2": 1638
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.308,
+      "box": {
+        "x1": 564,
+        "y1": 2151,
+        "x2": 732,
+        "y2": 2256
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.294,
+      "box": {
+        "x1": 24,
+        "y1": 1441,
+        "x2": 214,
+        "y2": 1601
+      }
+    },
+    {
+      "label": "kamogawa",
+      "confidence": 0.27,
+      "box": {
+        "x1": 1667,
+        "y1": 1885,
+        "x2": 1957,
+        "y2": 2187
+      }
+    }
+  ]
+}

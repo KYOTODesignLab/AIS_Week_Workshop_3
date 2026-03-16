@@ -1,0 +1,138 @@
+{
+  "timestamp": 1773640253304,
+  "session_id": "0v4o6plm8llmmsrlo3a",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.02766176369126,
+    "longitude": 135.78270189680785,
+    "accuracy": 19.48618987783386
+  },
+  "orientation": {
+    "alpha": 357.42,
+    "beta": 47.36,
+    "gamma": -10.84
+  },
+  "detections": [
+    {
+      "label": "river",
+      "confidence": 0.805,
+      "box": {
+        "x1": 1823,
+        "y1": 1987,
+        "x2": 1993,
+        "y2": 2080
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.774,
+      "box": {
+        "x1": 1619,
+        "y1": 2193,
+        "x2": 1759,
+        "y2": 2290
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.574,
+      "box": {
+        "x1": 337,
+        "y1": 1941,
+        "x2": 411,
+        "y2": 1993
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.492,
+      "box": {
+        "x1": 1155,
+        "y1": 2394,
+        "x2": 1358,
+        "y2": 2533
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.429,
+      "box": {
+        "x1": 1328,
+        "y1": 2300,
+        "x2": 1411,
+        "y2": 2355
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.398,
+      "box": {
+        "x1": 2115,
+        "y1": 1970,
+        "x2": 2160,
+        "y2": 2074
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.381,
+      "box": {
+        "x1": 567,
+        "y1": 2522,
+        "x2": 700,
+        "y2": 2643
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.353,
+      "box": {
+        "x1": 2120,
+        "y1": 1936,
+        "x2": 2160,
+        "y2": 2074
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.292,
+      "box": {
+        "x1": 1047,
+        "y1": 2511,
+        "x2": 1147,
+        "y2": 2600
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.279,
+      "box": {
+        "x1": 1470,
+        "y1": 2387,
+        "x2": 1598,
+        "y2": 2498
+      }
+    },
+    {
+      "label": "many",
+      "confidence": 0.262,
+      "box": {
+        "x1": 1608,
+        "y1": 2320,
+        "x2": 1678,
+        "y2": 2364
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.252,
+      "box": {
+        "x1": 1989,
+        "y1": 2121,
+        "x2": 2061,
+        "y2": 2194
+      }
+    }
+  ]
+}

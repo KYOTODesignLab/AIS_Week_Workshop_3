@@ -182,7 +182,7 @@ def _wait_ack(session_id):
     _pending_acks.pop(session_id, None)
 
 
-def _dispatch(client, session_id, img_data, message, nickname, location, orientation):
+def _dispatch(client, session_id, img_data, message, nickname, location, orientation, crop_mode="square"):
     """Save assembled image bytes and launch the processing thread."""
     ts        = int(time.time() * 1000)
     img_path  = os.path.join(CACHE_DIR, f"{ts}.jpg")
@@ -198,7 +198,7 @@ def _dispatch(client, session_id, img_data, message, nickname, location, orienta
     threading.Thread(
         target=_process_image,
         args=(client, session_id, ts, img_path, json_path,
-              message, nickname, location, orientation),
+              message, nickname, location, orientation, crop_mode),
         daemon=True
     ).start()
 
@@ -231,6 +231,7 @@ def _on_message(client, userdata, msg):
                         "nickname":    p.get("nickname", "anonymous"),
                         "location":    p.get("location"),
                         "orientation": p.get("orientation"),
+                        "crop_mode":   p.get("crop_mode", "square"),
                     }
                 if len(entry["parts"]) == total:
                     b64      = "".join(entry["parts"][i] for i in range(total))
@@ -241,7 +242,8 @@ def _on_message(client, userdata, msg):
             if len(entry["parts"]) == total:   # check outside lock
                 _dispatch(client, session_id, img_data,
                           meta["message"], meta["nickname"],
-                          meta["location"], meta["orientation"])
+                          meta["location"], meta["orientation"],
+                          meta.get("crop_mode", "square"))
         except Exception as e:
             _log(f"Chunk error: {e}", "ERROR")
         return
@@ -256,13 +258,14 @@ def _on_message(client, userdata, msg):
             img_data    = base64.b64decode(p["image"])
             _dispatch(client, session_id, img_data,
                       p.get("message", ""), p.get("nickname", "anonymous"),
-                      p.get("location"), p.get("orientation"))
+                      p.get("location"), p.get("orientation"),
+                      p.get("crop_mode", "square"))
         except Exception as e:
             _log(f"MQTT message error: {e}", "ERROR")
 
 
 def _process_image(client, session_id, ts, img_path, json_path,
-                   message, nickname, location, orientation):
+                   message, nickname, location, orientation, crop_mode="square"):
     def _pub(status):
         client.publish(
             f"{MQTT_TOPIC_RES}/{session_id}",
@@ -352,7 +355,7 @@ def _process_image(client, session_id, ts, img_path, json_path,
         if IG_USER_ID and IG_TOKEN and CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET:
             _log(f"[{session_id}] Waiting for client ACK before Instagram upload…", "IG")
             _wait_ack(session_id)
-            _post_to_instagram(client, session_id, ts, caption)
+            _post_to_instagram(client, session_id, ts, caption, crop_mode)
         elif IG_USER_ID or IG_TOKEN:
             _log(f"[{session_id}] Instagram credentials incomplete — skipping auto-post", "WARN")
 
@@ -360,7 +363,7 @@ def _process_image(client, session_id, ts, img_path, json_path,
         _log(f"[{session_id}] Processing error: {e}", "ERROR")
 
 
-def _post_to_instagram(mqtt_client, session_id, ts, caption):
+def _post_to_instagram(mqtt_client, session_id, ts, caption, crop_mode="square"):
     img_path = os.path.join(CACHE_DIR, f"{ts}.jpg")
     def _pub_status(msg):
         mqtt_client.publish(
@@ -370,15 +373,21 @@ def _post_to_instagram(mqtt_client, session_id, ts, caption):
     try:
         with open(img_path, "rb") as f:
             img_bytes = f.read()
-        # Center-crop to 1:1 square (always valid aspect ratio for Instagram)
-        _log(f"[{session_id}] Cropping image to 1:1 square for Instagram…", "IG")
         img = Image.open(io.BytesIO(img_bytes))
         w, h = img.size
-        _log(f"[{session_id}] Original image size: {w}×{h}", "IG")
-        side = min(w, h)
-        left = (w - side) // 2
-        top  = (h - side) // 2
-        img  = img.crop((left, top, left + side, top + side))
+        _log(f"[{session_id}] Original image size: {w}×{h}  crop_mode={crop_mode}", "IG")
+        if crop_mode == "portrait":
+            # Center-crop to 3:4 portrait (1080×1440)
+            crop_w = min(w, h * 3 // 4)
+            crop_h = crop_w * 4 // 3
+            _log(f"[{session_id}] Cropping to 3:4 portrait ({crop_w}×{crop_h})…", "IG")
+        else:
+            # Center-crop to 1:1 square (1080×1080)
+            crop_w = crop_h = min(w, h)
+            _log(f"[{session_id}] Cropping to 1:1 square ({crop_w}×{crop_h})…", "IG")
+        left = (w - crop_w) // 2
+        top  = (h - crop_h) // 2
+        img  = img.crop((left, top, left + crop_w, top + crop_h))
         buf  = io.BytesIO()
         img.save(buf, format="JPEG", quality=95)
         img_bytes = buf.getvalue()

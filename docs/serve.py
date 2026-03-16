@@ -48,8 +48,9 @@ from test_with_stream_normal import process_frame, model  # noqa: E402
 
 BASE_DIR   = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(BASE_DIR, "..", "00_Marker_Training", "models", "AIS26ws3_yolov8n_3.pt")
-CACHE_DIR  = os.path.join(BASE_DIR, "cache")
-PORT       = 5000
+CACHE_DIR       = os.path.join(BASE_DIR, "cache")
+CACHE_HTML_DIR  = os.path.join(BASE_DIR, "cache_html")
+PORT            = 5000
 
 IG_USER_ID             = os.environ.get("IG_USER_ID",             "17841445535736185")  # Instagram Business account numeric ID
 IG_TOKEN               = os.environ.get("IG_TOKEN",               "EAANpAC8CLA0BQ0YdLllVUtq7yFirRSrexEKe6t3l6aj5XazcuIYizfNd0ZCflNUCNlrV5sLwShRs6Mn6AYcV4aZBrZC9hdqVyn86V2oN6GrnXdzCcsk5guUeptMD3eZCeRjIharDzHwRSJP1H3W9KdZBLy9InrK23rZC6wJcZC8ppy6X6vl6RneAJnC8YTRuLaQuD5x")  # long-lived access token
@@ -67,18 +68,19 @@ MQTT_TOPIC_GALLERY = "ais-workshop/gallery"
 IG_API = "https://graph.facebook.com/v19.0"
 
 os.makedirs(CACHE_DIR, exist_ok=True)
+os.makedirs(CACHE_HTML_DIR, exist_ok=True)
 
 # ── Gallery helpers (index.json + MQTT thumbnail) ────────────────────────────
 _index_lock = threading.Lock()
 
 
 def _update_cache_index():
-    """Rebuild docs/cache/index.json from all .jpg files in CACHE_DIR (sorted asc)."""
-    index_path = os.path.join(CACHE_DIR, "index.json")
+    """Rebuild docs/cache_html/index.json from all .jpg files in CACHE_HTML_DIR (sorted asc)."""
+    index_path = os.path.join(CACHE_HTML_DIR, "index.json")
     try:
         timestamps = sorted(
             os.path.splitext(f)[0]
-            for f in os.listdir(CACHE_DIR)
+            for f in os.listdir(CACHE_HTML_DIR)
             if f.endswith(".jpg")
         )
         with _index_lock:
@@ -86,6 +88,28 @@ def _update_cache_index():
                 json.dump(timestamps, fh)
     except Exception as e:
         _log(f"index.json update error: {e}", "ERROR")
+
+
+WEB_MAX_W   = 1200   # max width for gallery display images
+WEB_QUALITY = 82     # JPEG quality for gallery display images
+
+
+def _save_web_image(src_path: str, ts: int) -> str:
+    """Downsample *src_path* and save to CACHE_HTML_DIR/<ts>.jpg. Returns dest path."""
+    dest = os.path.join(CACHE_HTML_DIR, f"{ts}.jpg")
+    try:
+        img = cv2.imread(src_path)
+        if img is None:
+            return ""
+        h, w = img.shape[:2]
+        if w > WEB_MAX_W:
+            scale = WEB_MAX_W / w
+            img = cv2.resize(img, (WEB_MAX_W, int(h * scale)), interpolation=cv2.INTER_AREA)
+        cv2.imwrite(dest, img, [cv2.IMWRITE_JPEG_QUALITY, WEB_QUALITY])
+    except Exception as e:
+        _log(f"_save_web_image error: {e}", "ERROR")
+        return ""
+    return dest
 
 
 def _make_thumb_b64(img_path: str, max_w: int = 600, quality: int = 72) -> str:
@@ -257,6 +281,8 @@ def _process_image(client, session_id, ts, img_path, json_path,
         annotated  = process_frame(frame)
         cv2.imwrite(img_path, annotated)   # overwrite with AR-rendered version
         _log(f"[{session_id}] AR pipeline done in {time.time()-t0:.1f}s", "PROC")
+        web_path = _save_web_image(img_path, ts)
+        _log(f"[{session_id}] Web image saved → {web_path}", "PROC")
 
         # Extract YOLO detections from the raw frame for the JSON metadata
         _log(f"[{session_id}] Running YOLO detection…", "PROC")
@@ -288,7 +314,7 @@ def _process_image(client, session_id, ts, img_path, json_path,
             json.dump(meta, f, indent=2)
         _sse_broadcast({"ts": str(ts), "meta": meta})
         _update_cache_index()
-        thumb = _make_thumb_b64(img_path)
+        thumb = _make_thumb_b64(web_path or img_path)
         client.publish(
             MQTT_TOPIC_GALLERY,
             json.dumps({"ts": str(ts), "meta": meta, "thumb": thumb})

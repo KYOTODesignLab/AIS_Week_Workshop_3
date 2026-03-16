@@ -366,7 +366,7 @@
     // ── Initial load from static cache/index.json ─────────────────────────────
     async function loadGallery() {
       try {
-        const idxRes = await fetch('./cache/index.json');
+        const idxRes = await fetch('./cache_html/index.json');
         if (!idxRes.ok) throw new Error('index.json not found');
         const timestamps = await idxRes.json();  // sorted asc
 
@@ -382,7 +382,7 @@
             const r = await fetch(`./cache/${ts}.json`);
             if (r.ok) meta = await r.json();
           } catch (_) {}
-          return { ts, meta, imgSrc: `./cache/${ts}.jpg` };
+          return { ts, meta, imgSrc: `./cache_html/${ts}.jpg` };
         }));
 
         const newest = items[items.length - 1];
@@ -422,7 +422,7 @@
           // Use inline thumbnail for immediate display (image may not be committed yet)
           const imgSrc = data.thumb
             ? `data:image/jpeg;base64,${data.thumb}`
-            : `./cache/${data.ts}.jpg`;
+            : `./cache_html/${data.ts}.jpg`;
           pushNewImage({ ts: data.ts, meta: data.meta || {}, imgSrc });
         } catch (_) {}
       });

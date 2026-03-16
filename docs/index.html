@@ -155,6 +155,14 @@
       left: 50px;
       display: none;
     }
+
+    #crop-btn {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.4);
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
   </style>
 </head>
 <body>
@@ -170,6 +178,7 @@
   <canvas id="canvas"></canvas>
 
   <button id="capture-btn" class="fab"></button>
+  <button id="crop-btn"    class="fab"></button>
   <button id="send-btn"    class="fab"></button>
 
   <script>
@@ -178,7 +187,10 @@
     const canvas     = document.getElementById('canvas');
     const captureBtn = document.getElementById('capture-btn');
     const sendBtn    = document.getElementById('send-btn');
+    const cropBtn    = document.getElementById('crop-btn');
     const cropGuide  = document.getElementById('crop-guide');
+
+    let cropMode = 'square';
 
     // When the body is CSS-counter-rotated in landscape, fixed children use the
     // body as containing block (width=100vh, height=100vw). We must swap the
@@ -187,14 +199,27 @@
       const isLandscape = window.innerWidth > window.innerHeight;
       const vw = isLandscape ? window.innerHeight : window.innerWidth;
       const vh = isLandscape ? window.innerWidth  : window.innerHeight;
-      const side = Math.min(vw, vh);
-      cropGuide.style.width  = side + 'px';
-      cropGuide.style.height = side + 'px';
-      cropGuide.style.left   = ((vw - side) / 2) + 'px';
-      cropGuide.style.top    = ((vh - side) / 2) + 'px';
+      let guideW, guideH;
+      if (cropMode === 'portrait') {
+        guideW = Math.min(vw, vh * 3 / 4);
+        guideH = guideW * 4 / 3;
+      } else {
+        const side = Math.min(vw, vh);
+        guideW = side;
+        guideH = side;
+      }
+      cropGuide.style.width  = guideW + 'px';
+      cropGuide.style.height = guideH + 'px';
+      cropGuide.style.left   = ((vw - guideW) / 2) + 'px';
+      cropGuide.style.top    = ((vh - guideH) / 2) + 'px';
     }
     sizeCropGuide();
     window.addEventListener('resize', sizeCropGuide);
+
+    cropBtn.addEventListener('click', () => {
+      cropMode = cropMode === 'square' ? 'portrait' : 'square';
+      sizeCropGuide();
+    });
 
     // Lock to portrait where supported (installed PWA / fullscreen on Android)
     if (screen.orientation && screen.orientation.lock) {
@@ -358,6 +383,7 @@
           nickname:    nicknameInput.value.trim() || 'anonymous',
           location:    geoLocation,
           orientation: deviceOrient,
+          crop_mode:   cropMode,
         };
         for (let i = 0; i < total; i++) {
           const chunk = b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);

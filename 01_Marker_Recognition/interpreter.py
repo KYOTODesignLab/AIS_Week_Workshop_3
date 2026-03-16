@@ -183,61 +183,90 @@ class BaseFrame:
     def _solve(self):
         cfg       = self.config
         available = [k for k in cfg.base_roles if k in self._by_name]
-        if len(available) < 4:  # all 4 base markers required
+        if len(available) < 3:  # need at least 3 base markers
             return
 
-        obj_pts = np.array(
-            [[cfg.positions[k].x, cfg.positions[k].y, cfg.positions[k].z]
-             for k in available], dtype=np.float64
-        )
+        # Normalise factor: 1 unit = the o-to-x distance in the config positions
+        o_pt = np.array([cfg.positions[cfg.origin_label].x,
+                         cfg.positions[cfg.origin_label].y,
+                         cfg.positions[cfg.origin_label].z], dtype=np.float64)
+        x_pt = np.array([cfg.positions[cfg.x_label].x,
+                         cfg.positions[cfg.x_label].y,
+                         cfg.positions[cfg.x_label].z], dtype=np.float64)
+        ox_dist = float(np.linalg.norm(x_pt - o_pt))
 
-        # Normalise so that 1 unit = the o-to-x distance in the config positions
-        o = np.array([cfg.positions[cfg.origin_label].x,
-                      cfg.positions[cfg.origin_label].y,
-                      cfg.positions[cfg.origin_label].z], dtype=np.float64)
-        x = np.array([cfg.positions[cfg.x_label].x,
-                      cfg.positions[cfg.x_label].y,
-                      cfg.positions[cfg.x_label].z], dtype=np.float64)
-        ox_dist = float(np.linalg.norm(x - o))
-        if ox_dist > 0:
-            obj_pts = obj_pts / ox_dist
-            self.unit = ox_dist
+        def _build_pts(subset):
+            obj = np.array(
+                [[cfg.positions[k].x, cfg.positions[k].y, cfg.positions[k].z]
+                 for k in subset], dtype=np.float64
+            )
+            if ox_dist > 0:
+                obj = obj / ox_dist
+            img = np.array(
+                [self._by_name[k].image_point for k in subset], dtype=np.float64
+            )
+            return obj, img
 
-        img_pts = np.array(
-            [self._by_name[k].image_point for k in available], dtype=np.float64
-        )
+        def _reproj_error(rvec, tvec, obj, img):
+            proj, _ = cv2.projectPoints(obj, rvec, tvec, self.K, self.dist)
+            return float(np.mean(np.linalg.norm(proj[:, 0, :] - img, axis=1)))
 
-        ok, rvec, tvec = cv2.solvePnP(
-            obj_pts, img_pts, self.K, self.dist, flags=cv2.SOLVEPNP_SQPNP
-        )
-        if ok:
-            self.valid         = True
-            self.rvec          = rvec
-            self.tvec          = tvec
-            self._R_mat, _     = cv2.Rodrigues(rvec)
-            self._tvec_ravel   = tvec.ravel()
-            self._Kinv         = np.linalg.inv(self.K)
-            for m in self._by_name.values():
-                m.world_point = self.unproject_to_plane(m.image_point, z=0.0)
-                cx, cy = m.image_point
-                half   = m.size / 2.0
-                wp1    = self.unproject_to_plane((cx - half, cy), z=0.0)
-                wp2    = self.unproject_to_plane((cx + half, cy), z=0.0)
-                dx, dy, dz = wp2.x - wp1.x, wp2.y - wp1.y, wp2.z - wp1.z
-                m.world_size = float((dx*dx + dy*dy + dz*dz) ** 0.5)
-            # Assign modifier markers to the geometry markers they are near
-            geo_markers = [m for m in self._by_name.values() if m.role_type == "geometry"]
-            mod_markers = [m for m in self._by_name.values() if m.role_type == "modifier"]
-            for geo in geo_markers:
-                geo.modifiers = []
-                radius = 2.0 * (geo.world_size or 0.0)
-                for mod in mod_markers:
-                    if mod.world_point is None:
-                        continue
-                    dx = mod.world_point.x - geo.world_point.x
-                    dy = mod.world_point.y - geo.world_point.y
-                    if (dx*dx + dy*dy) ** 0.5 <= radius:
-                        geo.modifiers.append(mod)
+        # Prefer all 4; only fall back to 3-marker subsets when one is absent
+        if len(available) == 4:
+            subsets = [available]
+        else:
+            # Try all C(4,3)=4 possible triplets from the full base_roles list
+            # (using only the ones that are actually available, which is exactly 3)
+            subsets = [available]
+
+        best_rvec = best_tvec = None
+        best_err  = float("inf")
+        best_unit = ox_dist if ox_dist > 0 else 1.0
+
+        for subset in subsets:
+            obj, img = _build_pts(subset)
+            ok, rvec, tvec = cv2.solvePnP(
+                obj, img, self.K, self.dist, flags=cv2.SOLVEPNP_SQPNP
+            )
+            if not ok:
+                continue
+            err = _reproj_error(rvec, tvec, obj, img)
+            if err < best_err:
+                best_err  = err
+                best_rvec = rvec
+                best_tvec = tvec
+
+        if best_rvec is None:
+            return
+
+        self.valid        = True
+        self.rvec         = best_rvec
+        self.tvec         = best_tvec
+        self.unit         = best_unit
+        self._R_mat, _    = cv2.Rodrigues(best_rvec)
+        self._tvec_ravel  = best_tvec.ravel()
+        self._Kinv        = np.linalg.inv(self.K)
+        for m in self._by_name.values():
+            m.world_point = self.unproject_to_plane(m.image_point, z=0.0)
+            cx, cy = m.image_point
+            half   = m.size / 2.0
+            wp1    = self.unproject_to_plane((cx - half, cy), z=0.0)
+            wp2    = self.unproject_to_plane((cx + half, cy), z=0.0)
+            dx, dy, dz = wp2.x - wp1.x, wp2.y - wp1.y, wp2.z - wp1.z
+            m.world_size = float((dx*dx + dy*dy + dz*dz) ** 0.5)
+        # Assign modifier markers to the geometry markers they are near
+        geo_markers = [m for m in self._by_name.values() if m.role_type == "geometry"]
+        mod_markers = [m for m in self._by_name.values() if m.role_type == "modifier"]
+        for geo in geo_markers:
+            geo.modifiers = []
+            radius = 2.0 * (geo.world_size or 0.0)
+            for mod in mod_markers:
+                if mod.world_point is None:
+                    continue
+                dx = mod.world_point.x - geo.world_point.x
+                dy = mod.world_point.y - geo.world_point.y
+                if (dx*dx + dy*dy) ** 0.5 <= radius:
+                    geo.modifiers.append(mod)
 
     def project(self, points: np.ndarray) -> np.ndarray:
         pts2d, _ = cv2.projectPoints(points, self.rvec, self.tvec, self.K, self.dist)

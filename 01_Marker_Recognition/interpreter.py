@@ -120,13 +120,13 @@ class MarkerDetector:
         if self._last_results is None:
             return
         overlay = img.copy()
+        fh, fw = img.shape[:2]
+        gray   = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         for box, cls, conf in zip(self._last_results.boxes.xyxy,
                                    self._last_results.boxes.cls,
                                    self._last_results.boxes.conf):
             x1, y1, x2, y2 = box.tolist()
             name  = self.model.names[int(cls.item())]
-            fh, fw = img.shape[:2]
-            gray   = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             if self.filter_results:
                 valid, _, _ = self._stats(gray, (fh, fw), x1, y1, x2, y2)
             else:
@@ -210,13 +210,7 @@ class BaseFrame:
             proj, _ = cv2.projectPoints(obj, rvec, tvec, self.K, self.dist)
             return float(np.mean(np.linalg.norm(proj[:, 0, :] - img, axis=1)))
 
-        # Prefer all 4; only fall back to 3-marker subsets when one is absent
-        if len(available) == 4:
-            subsets = [available]
-        else:
-            # Try all C(4,3)=4 possible triplets from the full base_roles list
-            # (using only the ones that are actually available, which is exactly 3)
-            subsets = [available]
+        subsets = [available]
 
         best_rvec = best_tvec = None
         best_err  = float("inf")
@@ -445,7 +439,7 @@ class PlacedCubeSurface:
                                   divided=divided, gap=gap)
         self.offset = np.array(offset, dtype=float)
 
-    def world_polygons(self):
+    def world_polygons(self, anchor_offset=None):
         """Return (disc_polys, square_polys) — lists of ndarray (N, 3) in world space."""
         discs   = [p + self.offset for p in self.model.disc_polygons()]
         squares = [p + self.offset for p in self.model.square_polygons()]
@@ -544,24 +538,9 @@ class Renderer:
             modifiers   = anchor_marker.modifiers if anchor_marker is not None else []
             use_texture = "heart" in {m.name for m in modifiers} and self._texture is not None
 
-            # ── PlacedSudare: project polygons anchored to marker world point ─────
-            if isinstance(shape, PlacedSudare):
+            # ── PlacedSudare / PlacedCubeSurface: project polygons ───────────
+            if isinstance(shape, (PlacedSudare, PlacedCubeSurface)):
                 discs, squares = shape.world_polygons(anchor_offset=anchor_offset)
-                for poly in discs:
-                    pts2d = self.marker_frame.project(poly)
-                    cam_z = (poly @ R.T + t)[:, 2]
-                    pts_i = pts2d[:, 0, :].astype(np.int32)
-                    all_faces.append((cam_z.mean(), pts_i, False, None, (225, 105, 65)))
-                for poly in squares:
-                    pts2d = self.marker_frame.project(poly)
-                    cam_z = (poly @ R.T + t)[:, 2]
-                    pts_i = pts2d[:, 0, :].astype(np.int32)
-                    all_faces.append((cam_z.mean(), pts_i, False, None, (0, 140, 255)))
-                continue
-
-            # ── PlacedCubeSurface: project polygons directly ──────────────────
-            if isinstance(shape, PlacedCubeSurface):
-                discs, squares = shape.world_polygons()
                 for poly in discs:
                     pts2d = self.marker_frame.project(poly)
                     cam_z = (poly @ R.T + t)[:, 2]

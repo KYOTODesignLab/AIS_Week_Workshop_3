@@ -1,4 +1,5 @@
 from ultralytics import YOLO
+import math
 import os
 import sys
 import cv2
@@ -203,8 +204,6 @@ def _estimate_fx(camera_specs: dict, img_w: int, img_h: int) -> float:
       2. Device lookup table — matched by UA + physical screen size + zoom range.
       3. Fallback: fx = 0.7 × img_w  (HFOV ≈ 71°, better than the old fx = w).
     """
-    import math
-
     if not camera_specs:
         return img_w * 0.7
 
@@ -397,6 +396,3 @@ if __name__ == "__main__":
 
         cap.release()
         cv2.destroyAllWindows()
-
-    cap.release()
-    cv2.destroyAllWindows()

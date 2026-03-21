@@ -1,0 +1,65 @@
+{
+  "timestamp": 1774103371153,
+  "session_id": "hryr61wcizqmn0f7unt",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.02337369936922,
+    "longitude": 135.737711165416,
+    "accuracy": 10.21636314806956
+  },
+  "orientation": {
+    "alpha": 20.25,
+    "beta": 58.67,
+    "gamma": 0.01
+  },
+  "camera_specs": {
+    "width": 4032,
+    "height": 2160,
+    "focalLength": null,
+    "zoom": 1,
+    "facingMode": "environment",
+    "frameRate": 30,
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/146.0.7680.40 Mobile/15E148 Safari/604.1",
+    "screenWidth": 393,
+    "screenHeight": 852,
+    "devicePixelRatio": 3,
+    "focalLengthRange": null,
+    "zoomRange": {
+      "min": 0.5,
+      "max": 10
+    }
+  },
+  "detections": [
+    {
+      "label": "mountain",
+      "confidence": 0.488,
+      "box": {
+        "x1": 1151,
+        "y1": 2900,
+        "x2": 1259,
+        "y2": 3030
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.316,
+      "box": {
+        "x1": 870,
+        "y1": 2422,
+        "x2": 1022,
+        "y2": 2557
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.26,
+      "box": {
+        "x1": 0,
+        "y1": 2209,
+        "x2": 91,
+        "y2": 2281
+      }
+    }
+  ]
+}

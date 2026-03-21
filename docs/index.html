@@ -308,6 +308,35 @@
 
     // ── Camera ────────────────────────────────────────────────────────────────
 
+    // ── Device model fingerprint ──────────────────────────────────────────────
+    function _guessDeviceModel(ua, sw, sh, dpr, zoomMax) {
+      const pw = Math.round(sw * dpr);
+      const ph = Math.round(sh * dpr);
+      const pro = zoomMax != null && zoomMax >= 14;
+      if (/iphone/i.test(ua)) {
+        if (pw === 1206 && ph === 2622) return pro ? 'iPhone 16 Pro'     : 'iPhone 16 Pro';
+        if (pw === 1320 && ph === 2868) return pro ? 'iPhone 16 Pro Max' : 'iPhone 16 Pro Max';
+        if (pw === 1179 && ph === 2556) return pro ? 'iPhone 14/15 Pro'  : 'iPhone 14/15/16';
+        if (pw === 1290 && ph === 2796) return pro ? 'iPhone 15 Pro Max' : 'iPhone 15/16 Plus';
+        if (pw === 1170 && ph === 2532) return 'iPhone 12/13/14';
+        if (pw ===  828 && ph === 1792) return 'iPhone XR/11';
+        if (pw === 1125 && ph === 2436) return 'iPhone X/XS/11 Pro';
+        if (pw ===  750 && ph === 1334) return 'iPhone SE';
+        return 'iPhone (unknown model)';
+      }
+      if (/samsung/i.test(ua)) {
+        if (pw === 1080 && ph === 2340) return 'Samsung S24/S25';
+        if (pw === 1440 && ph === 3088) return 'Samsung S24/S25 Ultra';
+        return 'Samsung (unidentified)';
+      }
+      if (/pixel/i.test(ua)) {
+        if (pw === 1080 && ph === 2400) return 'Pixel 9';
+        if (pw === 1344 && ph === 2992) return 'Pixel 9 Pro XL';
+        return 'Google Pixel (unidentified)';
+      }
+      return 'unknown';
+    }
+
     async function startCamera() {
       showMessage('starting camera…');
       try {
@@ -320,6 +349,7 @@
         const s = track?.getSettings() ?? {};
         let caps = {};
         if (track?.getCapabilities) { try { caps = track.getCapabilities(); } catch(e) {} }
+        const zoomCapMax = caps.zoom?.max ?? null;
         cameraSpecs = {
           width:            s.width        ?? null,
           height:           s.height       ?? null,
@@ -335,6 +365,10 @@
             ? { min: caps.focalLength.min, max: caps.focalLength.max } : null,
           zoomRange: caps.zoom
             ? { min: caps.zoom.min, max: caps.zoom.max } : null,
+          deviceModel: _guessDeviceModel(
+            navigator.userAgent, screen.width, screen.height,
+            window.devicePixelRatio ?? 1, zoomCapMax
+          ),
         };
         showMessage(`camera ready  ${s.width ?? '?'}×${s.height ?? '?'}`);
       } catch (err) {

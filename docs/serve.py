@@ -284,7 +284,7 @@ def _process_image(client, session_id, ts, img_path, json_path,
         _log(f"[{session_id}] Running AR pipeline (process_frame)…", "PROC")
         t0        = time.time()
         frame      = cv2.imread(img_path)
-        annotated  = process_frame(frame)
+        annotated  = process_frame(frame, camera_specs=camera_specs)
         cv2.imwrite(img_path, annotated)   # overwrite with AR-rendered version
         _log(f"[{session_id}] AR pipeline done in {time.time()-t0:.1f}s", "PROC")
         web_path = _save_web_image(img_path, ts)

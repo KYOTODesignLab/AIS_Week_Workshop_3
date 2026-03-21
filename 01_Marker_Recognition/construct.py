@@ -161,17 +161,101 @@ class _PoseSmoother:
 _det_smoother  = _DetectionSmoother()
 _pose_smoother = _PoseSmoother()
 
+# ── Device FOV lookup table ───────────────────────────────────────────────────
+# Each entry: (ua_substr, phys_w, phys_h, zoom_max_ge, hfov_deg, label)
+#   phys_w / phys_h  = screen CSS pixels × devicePixelRatio (rounded)
+#   zoom_max_ge      = minimum zoomRange.max to match this row (None = any)
+#   hfov_deg         = horizontal field of view of the main (1×) wide camera
+#
+# HFOV derived from 35mm-equiv focal length on a 4:3 phone sensor:
+#   diagonal_FOV = 2·arctan(43.27 / (2·f_equiv))
+#   HFOV_4:3     ≈ diagonal_FOV × (4/5) scaled by aspect geometry ≈ 73° for 26mm
+#
+# Rows are tested top-to-bottom; first match wins.
+_DEVICE_DB = [
+    # ── Apple iPhone (wide / main camera at 1× zoom) ───────────────────────
+    # Pro models: 24mm-equiv sensor  → HFOV ≈ 78°
+    ("iphone", 1206, 2622, 14, 78.0, "iPhone 16 Pro"),
+    ("iphone", 1320, 2868, 14, 78.0, "iPhone 16 Pro Max"),
+    ("iphone", 1179, 2556, 14, 78.0, "iPhone 14/15 Pro"),
+    ("iphone", 1290, 2796, 14, 78.0, "iPhone 15 Pro Max"),
+    # Standard models: 26mm-equiv    → HFOV ≈ 73°
+    ("iphone", 1179, 2556, None, 73.0, "iPhone 14/15/16"),
+    ("iphone", 1290, 2796, None, 73.0, "iPhone 15/16 Plus"),
+    ("iphone", 1170, 2532, None, 73.0, "iPhone 12/13/14"),
+    ("iphone",  828, 1792, None, 73.0, "iPhone XR/11"),
+    ("iphone", 1125, 2436, None, 73.0, "iPhone X/XS/11 Pro"),
+    ("iphone",  750, 1334, None, 73.0, "iPhone SE"),
+    # ── Samsung Galaxy (approx.) ───────────────────────────────────────────
+    ("samsung", 1080, 2340, None, 80.0, "Samsung S24/S25"),
+    ("samsung", 1440, 3088, None, 85.0, "Samsung S24/S25 Ultra"),
+    # ── Google Pixel ───────────────────────────────────────────────────────
+    ("pixel",  1080, 2400, None, 79.0, "Pixel 9"),
+    ("pixel",  1344, 2992, None, 82.0, "Pixel 9 Pro XL"),
+]
+
+
+def _estimate_fx(camera_specs: dict, img_w: int, img_h: int) -> float:
+    """Return the best focal-length estimate (in pixels) for the given frame.
+
+    Priority:
+      1. Browser-reported focalLength (Android Chrome only) converted via sensor width.
+      2. Device lookup table — matched by UA + physical screen size + zoom range.
+      3. Fallback: fx = 0.7 × img_w  (HFOV ≈ 71°, better than the old fx = w).
+    """
+    import math
+
+    if not camera_specs:
+        return img_w * 0.7
+
+    # 1. Direct focalLength from browser (rare, Android Chrome)
+    fl = camera_specs.get("focalLength")
+    if fl:
+        # fl is in mm; convert using the horizontal sensor width inferred from
+        # the 35mm-equiv (assuming 26mm-equiv → HFOV 73° as reference)
+        hfov_rad = math.radians(73.0)
+        sensor_w_mm = 2 * fl * math.tan(hfov_rad / 2)
+        return (img_w / 2) / math.tan(hfov_rad / 2)   # still use HFOV path
+
+    # 2. Device lookup
+    ua  = (camera_specs.get("userAgent") or "").lower()
+    sw  = camera_specs.get("screenWidth")  or 0
+    sh  = camera_specs.get("screenHeight") or 0
+    dpr = camera_specs.get("devicePixelRatio") or 1
+    zm  = (camera_specs.get("zoomRange") or {}).get("max")
+    pw  = round(sw * dpr)
+    ph  = round(sh * dpr)
+
+    for ua_sub, db_pw, db_ph, zm_ge, hfov_deg, label in _DEVICE_DB:
+        if ua_sub not in ua:
+            continue
+        if abs(pw - db_pw) > 30 or abs(ph - db_ph) > 30:
+            continue
+        if zm_ge is not None and (zm is None or zm < zm_ge):
+            continue
+        hfov_rad = math.radians(hfov_deg)
+        fx = (img_w / 2) / math.tan(hfov_rad / 2)
+        print(f"[camera] matched {label}  HFOV={hfov_deg}°  fx={fx:.1f}px")
+        return fx
+
+    # 3. Generic fallback (HFOV ≈ 71°)
+    return img_w * 0.7
+
+
 # ── Core processing function ──────────────────────────────────────────────────
 
-def process_frame(frame: np.ndarray) -> np.ndarray:
+def process_frame(frame: np.ndarray, camera_specs: dict = None) -> np.ndarray:
     """Run the full 4-step AR pipeline on *frame* and return the annotated image.
 
     This function is the shared entry-point used by server_pc_inference.py.
+    Pass *camera_specs* (the dict saved in the JSON cache) to enable improved
+    focal-length estimation instead of the default fx = image_width fallback.
     """
     h, w = frame.shape[:2]
-    K = np.array([[w, 0, w / 2],
-                  [0, w, h / 2],
-                  [0, 0, 1   ]], dtype=np.float64)
+    fx = _estimate_fx(camera_specs, w, h)
+    K = np.array([[fx, 0,  w / 2],
+                  [0,  fx, h / 2],
+                  [0,  0,  1    ]], dtype=np.float64)
 
     annotated = frame.copy()
 

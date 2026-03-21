@@ -7,7 +7,7 @@ The phone downloads the YOLO ONNX model, runs inference entirely on-device,
 draws bounding boxes in the browser, and sends the already-annotated JPEG
 frames to this server.  The PC only relays those frames to the display page.
 
-Run:  python server_phone_inference.py
+Run:  python 02_Processing_Server/server_phone_inference.py
 """
 import os
 import socket
@@ -20,6 +20,8 @@ from flask import Flask, render_template, request, send_from_directory, jsonify
 from flask_socketio import SocketIO, emit
 from ultralytics import YOLO
 
+_MR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "01_Marker_Recognition")
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -28,14 +30,14 @@ PORT = 5000
 # ---------------------------------------------------------------------------
 # Flask + SocketIO setup
 # ---------------------------------------------------------------------------
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"))
 app.config["SECRET_KEY"] = os.urandom(24).hex()
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 # ---------------------------------------------------------------------------
 # Model paths  (populated at startup in __main__)
 # ---------------------------------------------------------------------------
-_MODEL_PT   = os.path.join(os.path.dirname(__file__), "models", "sumizuke_yolov8n_3.pt")
+_MODEL_PT   = os.path.join(_MR_DIR, "models", "sumizuke_yolov8n_3.pt")
 _MODEL_ONNX = ""   # set in __main__
 _CLASS_NAMES = []  # set in __main__
 
@@ -162,7 +164,7 @@ def ensure_ssl_cert(ip: str):
 @app.route("/css/<path:filename>")
 def serve_css(filename):
     return send_from_directory(
-        os.path.join(os.path.dirname(__file__), "templates"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),
         filename,
         mimetype="text/css",
     )
@@ -171,7 +173,7 @@ def serve_css(filename):
 @app.route("/model")
 def serve_model():
     """Serve the ONNX model file for browser-side inference."""
-    model_dir = os.path.join(os.path.dirname(__file__), "models")
+    model_dir = os.path.join(_MR_DIR, "models")
     onnx_name = os.path.basename(_MODEL_ONNX)
     resp = send_from_directory(model_dir, onnx_name, mimetype="application/octet-stream")
     resp.headers["Cache-Control"] = "public, max-age=86400"

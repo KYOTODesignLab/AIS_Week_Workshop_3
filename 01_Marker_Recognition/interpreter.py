@@ -5,8 +5,7 @@ import numpy as np
 from compas.datastructures import Mesh
 from compas.geometry import Box, Frame, Point, Torus, Vector
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from geometry_surface_model import CubeSurface, Sudare
+from geometry import CubeSurface, Sudare
 
 _TEXTURE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              "elements", "textures", "leopard_texture.jpg")

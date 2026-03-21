@@ -113,3 +113,89 @@ pip install torch torchvision torchaudio
    You should see `True` for CUDA if your GPU and driver are set up correctly.
 
 > **Note:** Do not hard-code a specific build like `torch==2.10.0+cu130` in `environment.yml` — it will break for anyone with a different CUDA version or OS.
+
+---
+
+## Repository Structure
+
+```
+AIS_Week_Workshop_3/
+│
+├── 00_Marker_Training/        # YOLO model training pipeline
+├── 01_Marker_Recognition/     # Core AR pipeline library
+├── 02_Processing_Server/      # Server scripts and web UI
+└── docs/                      # GitHub Pages site + image cache
+```
+
+---
+
+## `00_Marker_Training/` — Training Pipeline
+
+The folder takes you from raw photos of the markers all the way to a trained `.pt` model file ready to be used by the AR pipeline.
+
+### Step 1 — Collect & resize raw images — `resize.py`
+
+Place raw marker photos (JPEGs) into `labelImg/marker_images/raw/`. Running `resize.py` center-crops each image to a square and rescales it to **1224 × 1224 px**, saving results into `labelImg/marker_images/resized/`. The fixed size matches the training resolution used later, ensuring consistent feature scales.
+
+### Step 2 — Label the resized images — `labelImg/`
+
+Open LabelImg, point it at `resized/`, and draw bounding boxes around each marker in every image. LabelImg saves one `.txt` file per image in YOLO format (class index + normalised box coordinates). Class names are pre-defined in `labelImg/data/predefined_classes.txt`.
+
+The 9 classes are:
+`kamogawa · take · zinzya · yama` (the 4 frame markers) and `river · mountain · sunlight · many · big` (geometry + modifier markers).
+
+### Step 3 — Split into train / val sets — `split_dataset.py`
+
+Randomly shuffles the labelled image–label pairs and copies them into:
+```
+labelImg/dataset/images/train|val
+labelImg/dataset/labels/train|val
+```
+Default split is **80 % train / 20 % val**. Re-run whenever new images are added.
+
+### Step 4 — Train the model — `train_yolo_model.py` + `data.yaml`
+
+Calls `YOLO.train()` with `data.yaml` pointing at the split dataset. Key settings:
+- Base weights: `yolov8n.pt` (nano backbone) — or set `START_FROM = output` to resume from the last checkpoint
+- 150 epochs, image size 1224, batch 8, GPU if available
+- Output saved to `models/AIS26ws3_yolov8n_3.pt` — this is the file loaded by `construct.py`
+
+### Step 5 — Verify the result — `test_with_custom_img.py`
+
+Loads `AIS26ws3_yolov8n_3.pt` and runs inference on 3 randomly sampled images from the resized folder, displaying results on screen. Quick sanity check before deploying.
+
+---
+
+## `01_Marker_Recognition/` — Core AR Pipeline
+
+| File | Purpose |
+|---|---|
+| `geometry.py` | Defines `CubeSurface` and `Sudare` — the 3-D surface geometry models rendered as AR overlays. Includes an interactive matplotlib viewer when run directly. |
+| `interpreter.py` | The full AR engine: `MarkerDetector` (YOLO → bounding boxes), `BaseFrame` (solvePnP pose estimation, improved `fx` via device lookup), `Scene` / `Renderer` (project and draw geometry). |
+| `construct.py` | **Entry point for the pipeline.** Loads the YOLO model, defines the marker config, builds the scene, and exposes `process_frame(frame, camera_specs)` — the single function called by all servers. |
+| `process_folder.py` | Batch-processes images from `to_process/` → `processed/` using the same pipeline. Run: `python 01_Marker_Recognition/process_folder.py` |
+| `elements/models/` | OBJ mesh files used as 3-D overlays. |
+
+---
+
+## `02_Processing_Server/` — Server Modes
+
+| File | Purpose |
+|---|---|
+| `serve.py` | **Main production server.** Receives phone photos over MQTT (HiveMQ public broker), runs `process_frame`, caches results to `docs/cache/`, posts to Instagram via Cloudinary, and pushes gallery updates via SSE. Run: `python 02_Processing_Server/serve.py` |
+| `server_pc_inference.py` | Socket.IO server: phone streams live video, PC runs YOLO inference, streams annotated frames back. Run: `python 02_Processing_Server/server_pc_inference.py` |
+| `server_phone_inference.py` | Socket.IO server: phone runs YOLO on-device (ONNX), PC only relays the annotated frames. Run: `python 02_Processing_Server/server_phone_inference.py` |
+| `templates/` | HTML/CSS for the phone camera UI (`camera.html`, `camera_pc.html`) and the QR-code index page. |
+| `.env.example` | Template for Instagram + Cloudinary credentials — copy to `.env` and fill in values. |
+
+---
+
+## `docs/` — GitHub Pages
+
+| File | Purpose |
+|---|---|
+| `index.html` | **Phone capture UI** — camera access, rear-lens switching, GPS/orientation collection, device fingerprinting, and chunked MQTT upload with `camera_specs`. |
+| `gallery.html` | Public gallery of processed AR images with live SSE updates. |
+| `cache/` | Per-session JSON metadata + full-res AR images (written by `serve.py`). |
+| `cache_html/` | Downsampled JPEG versions for gallery display. |
+

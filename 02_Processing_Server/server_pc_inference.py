@@ -8,7 +8,7 @@ Socket.IO.  The PC decodes each frame, runs YOLO inference, draws bounding
 boxes, and streams the annotated frame to the display page.
 No model download is needed on the phone.
 
-Run:  python server_pc_inference.py
+Run:  python 02_Processing_Server/server_pc_inference.py
 """
 import os
 import socket
@@ -25,7 +25,11 @@ import eventlet.wsgi
 eventlet.monkey_patch()
 from flask import Flask, render_template, render_template_string, request, send_from_directory, jsonify
 from flask_socketio import SocketIO, emit
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "01_Marker_Recognition"))
 from construct import process_frame
+
+_MR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "01_Marker_Recognition")
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -35,7 +39,7 @@ PORT = 5000
 # ---------------------------------------------------------------------------
 # Flask + SocketIO setup
 # ---------------------------------------------------------------------------
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"))
 app.config["SECRET_KEY"] = os.urandom(24).hex()
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
@@ -196,7 +200,7 @@ def open_local_browser(url: str):
 @app.route("/css/<path:filename>")
 def serve_css(filename):
     return send_from_directory(
-        os.path.join(os.path.dirname(__file__), "templates"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates"),
         filename,
         mimetype="text/css",
     )

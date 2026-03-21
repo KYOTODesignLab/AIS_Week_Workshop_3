@@ -1,5 +1,5 @@
 """
-geometry_surface_model.py
+geometry.py
 ─────────────────────────
 A cube whose 6 faces each carry a 5 × 5 array of nodes.
 At every node two perpendicular vertical surfaces are placed:

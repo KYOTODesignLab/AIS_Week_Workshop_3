@@ -12,7 +12,7 @@ Usage:
          IG_TOKEN               - long-lived Instagram Graph API access token
          CLOUDINARY_CLOUD_NAME  - Cloudinary cloud name (free at cloudinary.com)
          CLOUDINARY_UPLOAD_PRESET - unsigned upload preset name
-    3. python docs/serve.py
+    3. python 02_Processing_Server/serve.py
 
 MQTT topics:
     Subscribe: ais-workshop/image/<session_id>   (receives base64 JPEG + message)
@@ -48,8 +48,8 @@ from construct import process_frame, model  # noqa: E402
 
 BASE_DIR   = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(BASE_DIR, "..", "00_Marker_Training", "models", "AIS26ws3_yolov8n_3.pt")
-CACHE_DIR       = os.path.join(BASE_DIR, "cache")
-CACHE_HTML_DIR  = os.path.join(BASE_DIR, "cache_html")
+CACHE_DIR       = os.path.join(BASE_DIR, "..", "docs", "cache")
+CACHE_HTML_DIR  = os.path.join(BASE_DIR, "..", "docs", "cache_html")
 PORT            = 5000
 
 IG_USER_ID             = os.environ.get("IG_USER_ID",             "17841445535736185")  # Instagram Business account numeric ID

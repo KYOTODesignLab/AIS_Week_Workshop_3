@@ -182,7 +182,7 @@ def _wait_ack(session_id):
     _pending_acks.pop(session_id, None)
 
 
-def _dispatch(client, session_id, img_data, message, nickname, location, orientation, crop_mode="square"):
+def _dispatch(client, session_id, img_data, message, nickname, location, orientation, crop_mode="square", camera_specs=None):
     """Save assembled image bytes and launch the processing thread."""
     ts        = int(time.time() * 1000)
     img_path  = os.path.join(CACHE_DIR, f"{ts}.jpg")
@@ -198,7 +198,7 @@ def _dispatch(client, session_id, img_data, message, nickname, location, orienta
     threading.Thread(
         target=_process_image,
         args=(client, session_id, ts, img_path, json_path,
-              message, nickname, location, orientation, crop_mode),
+              message, nickname, location, orientation, crop_mode, camera_specs),
         daemon=True
     ).start()
 
@@ -227,11 +227,12 @@ def _on_message(client, userdata, msg):
                 entry["parts"][idx] = p["chunk"]
                 if idx == 0:
                     entry["meta"] = {
-                        "message":     p.get("message", ""),
-                        "nickname":    p.get("nickname", "anonymous"),
-                        "location":    p.get("location"),
-                        "orientation": p.get("orientation"),
-                        "crop_mode":   p.get("crop_mode", "square"),
+                        "message":      p.get("message", ""),
+                        "nickname":     p.get("nickname", "anonymous"),
+                        "location":     p.get("location"),
+                        "orientation":  p.get("orientation"),
+                        "crop_mode":    p.get("crop_mode", "square"),
+                        "camera_specs": p.get("camera_specs"),
                     }
                 if len(entry["parts"]) == total:
                     b64      = "".join(entry["parts"][i] for i in range(total))
@@ -243,7 +244,8 @@ def _on_message(client, userdata, msg):
                 _dispatch(client, session_id, img_data,
                           meta["message"], meta["nickname"],
                           meta["location"], meta["orientation"],
-                          meta.get("crop_mode", "square"))
+                          meta.get("crop_mode", "square"),
+                          meta.get("camera_specs"))
         except Exception as e:
             _log(f"Chunk error: {e}", "ERROR")
         return
@@ -259,13 +261,14 @@ def _on_message(client, userdata, msg):
             _dispatch(client, session_id, img_data,
                       p.get("message", ""), p.get("nickname", "anonymous"),
                       p.get("location"), p.get("orientation"),
-                      p.get("crop_mode", "square"))
+                      p.get("crop_mode", "square"),
+                      p.get("camera_specs"))
         except Exception as e:
             _log(f"MQTT message error: {e}", "ERROR")
 
 
 def _process_image(client, session_id, ts, img_path, json_path,
-                   message, nickname, location, orientation, crop_mode="square"):
+                   message, nickname, location, orientation, crop_mode="square", camera_specs=None):
     def _pub(status):
         client.publish(
             f"{MQTT_TOPIC_RES}/{session_id}",
@@ -305,13 +308,14 @@ def _process_image(client, session_id, ts, img_path, json_path,
              ", ".join(f"{d['label']} {d['confidence']:.0%}" for d in detections) or "none", "PROC")
 
         meta = {
-            "timestamp":   ts,
-            "session_id":  session_id,
-            "message":     message,
-            "nickname":    nickname,
-            "location":    location,
-            "orientation": orientation,
-            "detections":  detections
+            "timestamp":    ts,
+            "session_id":   session_id,
+            "message":      message,
+            "nickname":     nickname,
+            "location":     location,
+            "orientation":  orientation,
+            "camera_specs": camera_specs,
+            "detections":   detections
         }
         with open(json_path, "w") as f:
             json.dump(meta, f, indent=2)

@@ -237,6 +237,7 @@
     // ── Sensor state ─────────────────────────────────────────────────────────
     let geoLocation  = null;
     let deviceOrient = null;
+    let cameraSpecs  = null;
 
     // Geolocation — request once, keep updating
     if (navigator.geolocation) {
@@ -317,6 +318,24 @@
         preview.srcObject = stream;
         const track = stream.getVideoTracks()[0];
         const s = track?.getSettings() ?? {};
+        let caps = {};
+        if (track?.getCapabilities) { try { caps = track.getCapabilities(); } catch(e) {} }
+        cameraSpecs = {
+          width:            s.width        ?? null,
+          height:           s.height       ?? null,
+          focalLength:      s.focalLength  ?? null,
+          zoom:             s.zoom         ?? null,
+          facingMode:       s.facingMode   ?? null,
+          frameRate:        s.frameRate    ?? null,
+          userAgent:        navigator.userAgent,
+          screenWidth:      screen.width,
+          screenHeight:     screen.height,
+          devicePixelRatio: window.devicePixelRatio ?? null,
+          focalLengthRange: caps.focalLength
+            ? { min: caps.focalLength.min, max: caps.focalLength.max } : null,
+          zoomRange: caps.zoom
+            ? { min: caps.zoom.min, max: caps.zoom.max } : null,
+        };
         showMessage(`camera ready  ${s.width ?? '?'}×${s.height ?? '?'}`);
       } catch (err) {
         console.error('Camera error:', err);
@@ -374,11 +393,12 @@
         console.log(`Sending image: ~${Math.round(b64.length / 1024)} KB in ${total} chunk(s)`);
         showMessage(`sending ${total} chunk${total > 1 ? 's' : ''}  (~${Math.round(b64.length/1024)} KB)…`);
         const meta = {
-          message:     '',
-          nickname:    nicknameInput.value.trim() || 'anonymous',
-          location:    geoLocation,
-          orientation: deviceOrient,
-          crop_mode:   cropMode,
+          message:      '',
+          nickname:     nicknameInput.value.trim() || 'anonymous',
+          location:     geoLocation,
+          orientation:  deviceOrient,
+          crop_mode:    cropMode,
+          camera_specs: cameraSpecs,
         };
         for (let i = 0; i < total; i++) {
           const chunk = b64.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);

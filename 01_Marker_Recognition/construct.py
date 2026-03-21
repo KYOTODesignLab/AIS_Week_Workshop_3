@@ -176,10 +176,12 @@ _pose_smoother = _PoseSmoother()
 _DEVICE_DB = [
     # ── Apple iPhone (wide / main camera at 1× zoom) ───────────────────────
     # Pro models: 24mm-equiv sensor  → HFOV ≈ 78°
-    ("iphone", 1206, 2622, 14, 78.0, "iPhone 16 Pro"),
-    ("iphone", 1320, 2868, 14, 78.0, "iPhone 16 Pro Max"),
-    ("iphone", 1179, 2556, 14, 78.0, "iPhone 14/15 Pro"),
-    ("iphone", 1290, 2796, 14, 78.0, "iPhone 15 Pro Max"),
+    # zm_ge=7: Pro telephoto lens raises reported zoomRange.max to ~10;
+    #          standard models (digital-only zoom) typically report ~3-5.
+    ("iphone", 1206, 2622,  7, 78.0, "iPhone 16 Pro"),
+    ("iphone", 1320, 2868,  7, 78.0, "iPhone 16 Pro Max"),
+    ("iphone", 1179, 2556,  7, 78.0, "iPhone 14/15/16 Pro"),
+    ("iphone", 1290, 2796,  7, 78.0, "iPhone 15/16 Pro Max"),
     # Standard models: 26mm-equiv    → HFOV ≈ 73°
     ("iphone", 1179, 2556, None, 73.0, "iPhone 14/15/16"),
     ("iphone", 1290, 2796, None, 73.0, "iPhone 15/16 Plus"),

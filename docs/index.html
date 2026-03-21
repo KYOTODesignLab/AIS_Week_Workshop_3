@@ -326,12 +326,14 @@
     function _guessDeviceModel(ua, sw, sh, dpr, zoomMax) {
       const pw = Math.round(sw * dpr);
       const ph = Math.round(sh * dpr);
-      const pro = zoomMax != null && zoomMax >= 14;
+      // Pro models expose telephoto → browser reports zoomRange.max ~10;
+      // standard models (digital-only) typically report ~3-5.
+      const pro = zoomMax != null && zoomMax >= 7;
       if (/iphone/i.test(ua)) {
-        if (pw === 1206 && ph === 2622) return pro ? 'iPhone 16 Pro'     : 'iPhone 16 Pro';
-        if (pw === 1320 && ph === 2868) return pro ? 'iPhone 16 Pro Max' : 'iPhone 16 Pro Max';
-        if (pw === 1179 && ph === 2556) return pro ? 'iPhone 14/15 Pro'  : 'iPhone 14/15/16';
-        if (pw === 1290 && ph === 2796) return pro ? 'iPhone 15 Pro Max' : 'iPhone 15/16 Plus';
+        if (pw === 1206 && ph === 2622) return pro ? 'iPhone 16 Pro'        : 'iPhone 16';
+        if (pw === 1320 && ph === 2868) return pro ? 'iPhone 16 Pro Max'    : 'iPhone 16 Plus';
+        if (pw === 1179 && ph === 2556) return pro ? 'iPhone 14/15/16 Pro'  : 'iPhone 14/15/16';
+        if (pw === 1290 && ph === 2796) return pro ? 'iPhone 15/16 Pro Max' : 'iPhone 15/16 Plus';
         if (pw === 1170 && ph === 2532) return 'iPhone 12/13/14';
         if (pw ===  828 && ph === 1792) return 'iPhone XR/11';
         if (pw === 1125 && ph === 2436) return 'iPhone X/XS/11 Pro';

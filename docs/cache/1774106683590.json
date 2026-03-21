@@ -1,0 +1,116 @@
+{
+  "timestamp": 1774106683590,
+  "session_id": "l52dyw39gpemn0h9s91",
+  "message": "",
+  "nickname": "anonymous",
+  "location": {
+    "latitude": 35.02338496449964,
+    "longitude": 135.737705026647,
+    "accuracy": 9.491600897715271
+  },
+  "orientation": {
+    "alpha": 338.76,
+    "beta": 67.23,
+    "gamma": 20.23
+  },
+  "camera_specs": {
+    "width": 4032,
+    "height": 2160,
+    "focalLength": null,
+    "zoom": 1,
+    "facingMode": "environment",
+    "frameRate": 30,
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/146.0.7680.40 Mobile/15E148 Safari/604.1",
+    "screenWidth": 393,
+    "screenHeight": 852,
+    "devicePixelRatio": 3,
+    "focalLengthRange": null,
+    "zoomRange": {
+      "min": 0.5,
+      "max": 10
+    },
+    "deviceModel": "iPhone 14/15/16"
+  },
+  "detections": [
+    {
+      "label": "mountain",
+      "confidence": 0.536,
+      "box": {
+        "x1": 1849,
+        "y1": 2100,
+        "x2": 2003,
+        "y2": 2201
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.504,
+      "box": {
+        "x1": 1536,
+        "y1": 2442,
+        "x2": 1705,
+        "y2": 2552
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.492,
+      "box": {
+        "x1": 1820,
+        "y1": 2214,
+        "x2": 1899,
+        "y2": 2276
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.466,
+      "box": {
+        "x1": 1294,
+        "y1": 2320,
+        "x2": 1487,
+        "y2": 2442
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.335,
+      "box": {
+        "x1": 946,
+        "y1": 2382,
+        "x2": 1080,
+        "y2": 2498
+      }
+    },
+    {
+      "label": "mountain",
+      "confidence": 0.323,
+      "box": {
+        "x1": 1201,
+        "y1": 2805,
+        "x2": 1306,
+        "y2": 2922
+      }
+    },
+    {
+      "label": "sunlight",
+      "confidence": 0.295,
+      "box": {
+        "x1": 729,
+        "y1": 3966,
+        "x2": 836,
+        "y2": 4030
+      }
+    },
+    {
+      "label": "river",
+      "confidence": 0.252,
+      "box": {
+        "x1": 0,
+        "y1": 3836,
+        "x2": 55,
+        "y2": 3893
+      }
+    }
+  ]
+}
